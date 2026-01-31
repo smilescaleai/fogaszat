@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 # Konfiguráció - Cseréld ki a saját értékeidre
 PAGE_ACCESS_TOKEN = os.environ.get('PAGE_ACCESS_TOKEN', 'YOUR_PAGE_ACCESS_TOKEN')
-VERIFY_TOKEN = os.environ.get('VERIFY_TOKEN', 'YOUR_VERIFY_TOKEN')
+VERIFY_TOKEN = 'f4fF3a4K9G55sF'
 ADMIN_PSID = os.environ.get('ADMIN_PSID', 'YOUR_ADMIN_PSID')  # Doki Facebook PSID
 
 # Állapotkezelés - memóriában (production-ben Redis/DB ajánlott)
