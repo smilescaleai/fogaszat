@@ -1,160 +1,174 @@
 import os
 import re
-import csv
-from datetime import datetime
-from flask import Flask, request, jsonify
 import requests
+from datetime import datetime
+from flask import Flask, request
+from pymongo import MongoClient
 
 app = Flask(__name__)
 
-# Konfiguráció - Cseréld ki a saját értékeidre
-PAGE_ACCESS_TOKEN = os.environ.get('PAGE_ACCESS_TOKEN', 'YOUR_PAGE_ACCESS_TOKEN')
-VERIFY_TOKEN = 'f4fF3a4K9G55sF'
-ADMIN_PSID = os.environ.get('ADMIN_PSID', 'YOUR_ADMIN_PSID')  # Doki Facebook PSID
+# Konfiguráció
+MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/')
+VERIFY_TOKEN = 'smilescale_token_2026'
+MESSENGER_API = 'https://graph.facebook.com/v18.0/me/messages'
 
-# Állapotkezelés - memóriában (production-ben Redis/DB ajánlott)
+# MongoDB kapcsolat
+try:
+    client = MongoClient(MONGO_URI)
+    db = client.smilescale
+    print("✅ MongoDB kapcsolat sikeres")
+except Exception as e:
+    print(f"❌ MongoDB hiba: {e}")
+    db = None
+
+# Állapotkezelés (memória - egyszerű verzió)
 user_states = {}
 
-# Facebook Messenger API URL
-MESSENGER_API_URL = f'https://graph.facebook.com/v18.0/me/messages?access_token={PAGE_ACCESS_TOKEN}'
+def send_message(token, recipient_id, text):
+    """Üzenet küldés Messengeren"""
+    try:
+        response = requests.post(
+            f"{MESSENGER_API}?access_token={token}",
+            json={'recipient': {'id': recipient_id}, 'message': {'text': text}},
+            timeout=10
+        )
+        return response.status_code == 200
+    except:
+        return False
 
-def send_message(recipient_id, message_text):
-    """Egyszerű szöveges üzenet küldése"""
-    payload = {
-        'recipient': {'id': recipient_id},
-        'message': {'text': message_text}
-    }
-    response = requests.post(MESSENGER_API_URL, json=payload)
-    return response.json()
+def get_page_config(page_id):
+    """Oldal konfiguráció lekérése DB-ből"""
+    try:
+        return db.pages.find_one({'page_id': page_id})
+    except:
+        return None
 
-def send_buttons(recipient_id, text, buttons):
-    """Gombok küldése"""
-    payload = {
-        'recipient': {'id': recipient_id},
-        'message': {
-            'attachment': {
-                'type': 'template',
-                'payload': {
-                    'template_type': 'button',
-                    'text': text,
-                    'buttons': buttons
-                }
-            }
-        }
-    }
-    response = requests.post(MESSENGER_API_URL, json=payload)
-    return response.json()
+def save_admin(page_id, admin_psid):
+    """Admin PSID mentése"""
+    try:
+        db.pages.update_one(
+            {'page_id': page_id},
+            {'$set': {'admin_psid': admin_psid, 'admin_updated_at': datetime.utcnow()}}
+        )
+        return True
+    except:
+        return False
 
-def send_main_menu(recipient_id):
-    """Főmenü gombok küldése"""
-    buttons = [
-        {'type': 'postback', 'title': '💰 Árak', 'payload': 'PRICES'},
-        {'type': 'postback', 'title': '📍 Helyszín', 'payload': 'LOCATION'},
-        {'type': 'postback', 'title': '📅 Időpontkérés', 'payload': 'APPOINTMENT'}
-    ]
-    send_buttons(recipient_id, 'Miben segíthetek?', buttons)
+def save_lead(page_id, name, phone, psid):
+    """Lead mentése DB-be"""
+    try:
+        db.leads.insert_one({
+            'page_id': page_id,
+            'name': name,
+            'phone': phone,
+            'psid': psid,
+            'created_at': datetime.utcnow()
+        })
+        return True
+    except:
+        return False
 
-def validate_phone(phone):
-    """Telefonszám validálás (magyar formátum)"""
-    # Elfogadja: +36301234567, 06301234567, 0630-123-4567, stb.
-    pattern = r'^(\+36|06)?[-\s]?[0-9]{1,2}[-\s]?[0-9]{3}[-\s]?[0-9]{3,4}$'
-    return re.match(pattern, phone.strip())
-
-def save_lead(psid, name, phone):
-    """Lead mentése CSV fájlba"""
-    file_exists = os.path.isfile('leads.csv')
-    
-    with open('leads.csv', 'a', newline='', encoding='utf-8') as f:
-        writer = csv.writer(f)
-        if not file_exists:
-            writer.writerow(['Dátum', 'PSID', 'Név', 'Telefonszám'])
-        writer.writerow([datetime.now().strftime('%Y-%m-%d %H:%M:%S'), psid, name, phone])
-
-def get_user_profile(psid):
-    """Felhasználó nevének lekérése Facebook API-ból"""
-    url = f'https://graph.facebook.com/v18.0/{psid}?fields=first_name,last_name&access_token={PAGE_ACCESS_TOKEN}'
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        return f"{data.get('first_name', '')} {data.get('last_name', '')}"
-    return 'Ismeretlen'
-
-def notify_admin(patient_name, phone):
-    """Doki értesítése új időpontról"""
-    message = f"🔔 Új időpontkérés!\n\n👤 Név: {patient_name}\n📞 Telefon: {phone}"
-    send_message(ADMIN_PSID, message)
+def detect_phone(text):
+    """Telefonszám detektálás"""
+    match = re.search(r'(\+?[0-9\s-]{7,20})', text)
+    return match.group(1).strip() if match else None
 
 @app.route('/webhook', methods=['GET'])
-def verify_webhook():
+def verify():
     """Webhook verifikáció"""
-    mode = request.args.get('hub.mode')
-    token = request.args.get('hub.verify_token')
-    challenge = request.args.get('hub.challenge')
-    
-    if mode == 'subscribe' and token == VERIFY_TOKEN:
-        print('Webhook verified!')
-        return challenge, 200
-    else:
-        return 'Verification failed', 403
+    if request.args.get('hub.verify_token') == VERIFY_TOKEN:
+        return request.args.get('hub.challenge'), 200
+    return 'Forbidden', 403
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    """Webhook üzenetek kezelése"""
+    """Webhook üzenetkezelés"""
     data = request.get_json()
-    
-    if data.get('object') == 'page':
-        for entry in data.get('entry', []):
-            for messaging_event in entry.get('messaging', []):
-                sender_id = messaging_event['sender']['id']
-                
-                # Postback kezelése (gombok)
-                if messaging_event.get('postback'):
-                    handle_postback(sender_id, messaging_event['postback'])
-                
-                # Szöveges üzenet kezelése
-                elif messaging_event.get('message'):
-                    handle_message(sender_id, messaging_event['message'])
+    if not data or data.get('object') != 'page':
+        return 'ok', 200
+
+    for entry in data.get('entry', []):
+        page_id = entry.get('id')
+        
+        # Oldal konfiguráció lekérése
+        config = get_page_config(page_id)
+        if not config:
+            continue  # Ismeretlen oldal - ignoráljuk
+        
+        token = config.get('page_access_token')
+        
+        for event in entry.get('messaging', []):
+            sender_id = event.get('sender', {}).get('id')
+            message = event.get('message', {})
+            text = message.get('text', '').strip()
+            
+            if not text:
+                continue
+            
+            # AUTH parancs kezelése
+            if text.upper().startswith('AUTH '):
+                password = text[5:].strip()
+                if password == config.get('admin_password'):
+                    save_admin(page_id, sender_id)
+                    send_message(token, sender_id, '✅ Sikeres azonosítás! Mostantól te kapod a leadeket ezen az oldalon.')
+                    print(f"🔑 Új admin: {page_id} -> {sender_id}")
+                else:
+                    send_message(token, sender_id, '❌ Hibás jelszó!')
+                continue
+            
+            # Állapot inicializálás
+            if sender_id not in user_states:
+                user_states[sender_id] = {'page_id': page_id, 'state': 'start', 'data': {}}
+            
+            state = user_states[sender_id]
+            
+            # Kezdő állapot - welcome text
+            if state['state'] == 'start':
+                welcome = config.get('welcome_text', 'Üdv! Kérlek add meg a neved:')
+                send_message(token, sender_id, welcome)
+                state['state'] = 'waiting_name'
+            
+            # Név bekérés
+            elif state['state'] == 'waiting_name':
+                state['data']['name'] = text
+                send_message(token, sender_id, f'Köszönöm, {text}! Add meg a telefonszámodat:')
+                state['state'] = 'waiting_phone'
+            
+            # Telefonszám bekérés
+            elif state['state'] == 'waiting_phone':
+                phone = detect_phone(text)
+                if phone:
+                    name = state['data'].get('name', 'Ismeretlen')
+                    
+                    # Lead mentése
+                    save_lead(page_id, name, phone, sender_id)
+                    
+                    # Visszajelzés páciensnek
+                    send_message(token, sender_id, f'✅ Köszönjük, {name}! Hamarosan felvesszük veled a kapcsolatot.')
+                    
+                    # Admin értesítése
+                    admin_psid = config.get('admin_psid')
+                    if admin_psid:
+                        send_message(token, admin_psid, f'🔔 ÚJ PÁCIENS!\n\n👤 Név: {name}\n📞 Tel: {phone}\n🆔 PSID: {sender_id}')
+                        print(f"✅ Admin értesítve: {page_id}")
+                    
+                    # Állapot törlése
+                    del user_states[sender_id]
+                else:
+                    send_message(token, sender_id, '❌ Kérlek adj meg egy érvényes telefonszámot!')
     
     return 'ok', 200
 
-def handle_postback(sender_id, postback):
-    """Gomb kattintások kezelése"""
-    payload = postback.get('payload')
-    
-    if payload == 'PRICES':
-        send_message(sender_id, '💰 Áraink:\n\n• Konzultáció: 15.000 Ft\n• Kezelés: 25.000 Ft\n• Csomag (5 alkalom): 100.000 Ft')
-        send_main_menu(sender_id)
-    
-    elif payload == 'LOCATION':
-        send_message(sender_id, '📍 Helyszín:\n\n1234 Budapest, Példa utca 12.\n\nNyitvatartás:\nH-P: 9:00-18:00\nSzo: 9:00-13:00')
-        send_main_menu(sender_id)
-    
-    elif payload == 'APPOINTMENT':
-        user_states[sender_id] = 'waiting_for_phone'
-        send_message(sender_id, '📅 Időpontfoglalás\n\nKérlek add meg a telefonszámodat, és hamarosan felvesszük veled a kapcsolatot!')
-
-def handle_message(sender_id, message):
-    """Szöveges üzenetek kezelése"""
-    text = message.get('text', '').strip()
-    
-    # Ha időpontkérés módban van
-    if user_states.get(sender_id) == 'waiting_for_phone':
-        if validate_phone(text):
-            # Telefonszám elfogadva
-            user_name = get_user_profile(sender_id)
-            save_lead(sender_id, user_name, text)
-            notify_admin(user_name, text)
-            
-            send_message(sender_id, '✅ Köszönjük! Telefonszámod rögzítettük.\n\nHamarosan felvesszük veled a kapcsolatot az időpont egyeztetéséhez.')
-            user_states[sender_id] = None
-            send_main_menu(sender_id)
-        else:
-            # Hibás formátum
-            send_message(sender_id, '❌ Kérlek adj meg egy érvényes telefonszámot!\n\nPélda: +36301234567 vagy 06301234567')
-    else:
-        # Alapértelmezett válasz
-        send_message(sender_id, f'Üdv! 👋\n\n{text}')
-        send_main_menu(sender_id)
+@app.route('/health', methods=['GET'])
+def health():
+    """Health check endpoint"""
+    return {'status': 'ok', 'db': 'connected' if db else 'disconnected'}, 200
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    print("=" * 60)
+    print("🚀 Smilescale Multi-Tenant Bot")
+    print("=" * 60)
+    print(f"🔐 Verify Token: {VERIFY_TOKEN}")
+    print(f"🗄️  MongoDB: {'✅ Connected' if db else '❌ Disconnected'}")
+    print("=" * 60)
+    app.run(host='0.0.0.0', port=5000, debug=False)
