@@ -8,6 +8,7 @@ from pymongo import MongoClient
 app = Flask(__name__)
 
 MONGO_URI = os.environ.get('MONGO_URI')
+client = pymongo.MongoClient(MONGO_URI)
 VERIFY_TOKEN = 'smilescale_token_2026'
 MESSENGER_API = 'https://graph.facebook.com/v18.0/me/messages'
 
@@ -171,4 +172,5 @@ if __name__ == '__main__':
     print(f"🗄️  MongoDB: {'✅ Connected' if db else '❌ Disconnected'}")
     print("=" * 60)
     app.run(host='0.0.0.0', port=5000, debug=False)
+
 
