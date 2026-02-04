@@ -25,6 +25,9 @@ def load_page_data():
         response = requests.get(CSV_URL, timeout=10)
         response.raise_for_status()
         
+        # UTF-8 encoding beállítása
+        response.encoding = 'utf-8'
+        
         csv_content = StringIO(response.text)
         reader = csv.DictReader(csv_content)
         
