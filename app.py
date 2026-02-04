@@ -226,31 +226,31 @@ def webhook():
                     else:
                         print(f"👤 Normál felhasználó üzenete - Generic Template küldése...")
                         
-                        # Gombok összeállítása a CSV adatokból
+                        # Gombok összeállítása a CSV adatokból (POSTBACK típussal)
                         buttons = []
                         
                         # 1. gomb
                         if page_info.get('button1_text') and page_info.get('button1_link'):
                             buttons.append({
-                                "type": "web_url",
-                                "url": page_info['button1_link'],
-                                "title": page_info['button1_text']
+                                "type": "postback",
+                                "title": page_info['button1_text'],
+                                "payload": page_info['button1_link']
                             })
                         
                         # 2. gomb
                         if page_info.get('button2_text') and page_info.get('button2_link'):
                             buttons.append({
-                                "type": "web_url",
-                                "url": page_info['button2_link'],
-                                "title": page_info['button2_text']
+                                "type": "postback",
+                                "title": page_info['button2_text'],
+                                "payload": page_info['button2_link']
                             })
                         
                         # 3. gomb
                         if page_info.get('button3_text') and page_info.get('button3_link'):
                             buttons.append({
-                                "type": "web_url",
-                                "url": page_info['button3_link'],
-                                "title": page_info['button3_text']
+                                "type": "postback",
+                                "title": page_info['button3_text'],
+                                "payload": page_info['button3_link']
                             })
                         
                         # Welcome text
@@ -263,6 +263,24 @@ def webhook():
                             # Ha nincsenek gombok, egyszerű szöveget küldünk
                             print("⚠️ Nincsenek gombok definiálva, szöveges üzenet küldése...")
                             send_text_message(sender_id, welcome_text, access_token)
+                
+                # Postback feldolgozása (gomb megnyomása)
+                if messaging_event.get('postback'):
+                    payload = messaging_event['postback'].get('payload', '')
+                    postback_title = messaging_event['postback'].get('title', '')
+                    
+                    print(f"🔘 Postback érkezett: {postback_title}")
+                    print(f"📦 Payload: {payload}")
+                    
+                    # Ellenőrizzük, hogy admin-e a felhasználó
+                    if page_id in admin_users and sender_id in admin_users[page_id]:
+                        print(f"👑 Admin felhasználó postback-je!")
+                        response_text = f"Admin mód aktív: {payload}"
+                        send_text_message(sender_id, response_text, access_token)
+                    else:
+                        # Normál felhasználónak küldjük a payload tartalmát
+                        print(f"👤 Normál felhasználó postback-je - payload küldése...")
+                        send_text_message(sender_id, payload, access_token)
     
     return jsonify({"status": "ok"}), 200
 
