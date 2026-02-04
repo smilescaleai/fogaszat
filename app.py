@@ -1,6 +1,6 @@
 import os
+import csv
 import requests
-import pandas as pd
 from flask import Flask, request, jsonify
 from io import StringIO
 
@@ -17,7 +17,7 @@ VERIFY_TOKEN = "smilescale_token_2026"
 
 def load_page_data():
     """
-    Letölti és feldolgozza a CSV fájlt a Google Sheets-ből pandas használatával.
+    Letölti és feldolgozza a CSV fájlt a Google Sheets-ből.
     Visszaad egy szótárat: {page_id: {"access_token": "...", "admin_password": "...", "welcome_text": "...", stb.}}
     """
     try:
@@ -25,14 +25,11 @@ def load_page_data():
         response = requests.get(CSV_URL, timeout=10)
         response.raise_for_status()
         
-        # Pandas DataFrame létrehozása
-        df = pd.read_csv(StringIO(response.text))
-        
-        # Oszlopnevek tisztítása (whitespace eltávolítása)
-        df.columns = df.columns.str.strip()
+        csv_content = StringIO(response.text)
+        reader = csv.DictReader(csv_content)
         
         page_data = {}
-        for _, row in df.iterrows():
+        for row in reader:
             page_id = str(row.get('page_id', '')).strip()
             access_token = str(row.get('access_token', '')).strip()
             admin_password = str(row.get('admin_password', '')).strip()
@@ -46,20 +43,19 @@ def load_page_data():
             button3_text = str(row.get('button3_text', '')).strip()
             button3_link = str(row.get('button3_link', '')).strip()
             
-            # NaN értékek kezelése
-            if page_id and page_id != 'nan' and access_token and access_token != 'nan':
+            if page_id and access_token:
                 page_data[page_id] = {
                     "access_token": access_token,
-                    "admin_password": admin_password if admin_password != 'nan' else '',
-                    "welcome_text": welcome_text if welcome_text != 'nan' else '',
-                    "button1_text": button1_text if button1_text != 'nan' else '',
-                    "button1_link": button1_link if button1_link != 'nan' else '',
-                    "button2_text": button2_text if button2_text != 'nan' else '',
-                    "button2_link": button2_link if button2_link != 'nan' else '',
-                    "button3_text": button3_text if button3_text != 'nan' else '',
-                    "button3_link": button3_link if button3_link != 'nan' else ''
+                    "admin_password": admin_password,
+                    "welcome_text": welcome_text,
+                    "button1_text": button1_text,
+                    "button1_link": button1_link,
+                    "button2_text": button2_text,
+                    "button2_link": button2_link,
+                    "button3_text": button3_text,
+                    "button3_link": button3_link
                 }
-                button_count = len([b for b in [button1_text, button2_text, button3_text] if b and b != 'nan'])
+                button_count = len([b for b in [button1_text, button2_text, button3_text] if b])
                 print(f"✅ Oldal betöltve: {page_id} (gombok: {button_count})")
         
         print(f"✅ CSV sikeresen betöltve! Összesen {len(page_data)} oldal.")
