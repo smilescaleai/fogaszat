@@ -136,35 +136,34 @@ def send_generic_template(recipient_id, welcome_text, buttons, access_token):
             print(f"❌ API válasz: {e.response.text}")
         return False
 
-@app.route('/', methods=['GET'])
-def verify():
+@app.route('/')
+def home():
     """
-    Facebook Webhook hitelesítés (GET kérés).
-    FIX: Ha nincs hub.verify_token paraméter, egyszerű OK választ ad.
+    Főoldal - egyszerű ellenőrző.
     """
-    mode = request.args.get('hub.mode')
-    token = request.args.get('hub.verify_token')
-    challenge = request.args.get('hub.challenge')
-    
-    # Ha nincsenek webhook paraméterek, egyszerű health check
-    if not token and not mode and not challenge:
-        print("✅ Health check kérés - SmileScale Server OK")
-        return "SmileScale Server OK", 200
-    
-    print(f"🔐 Webhook hitelesítési kérés: mode={mode}, token={token}")
-    
-    if mode == 'subscribe' and token == VERIFY_TOKEN:
-        print("✅ Webhook hitelesítés sikeres!")
-        return challenge, 200
-    else:
-        print("❌ Webhook hitelesítés sikertelen!")
-        return 'Forbidden', 403
+    return "SmileScale Server Active", 200
 
-@app.route('/', methods=['POST'])
+@app.route('/webhook', methods=['GET', 'POST'])
 def webhook():
     """
-    Facebook Webhook eseménykezelés (POST kérés).
+    Facebook Webhook - GET: hitelesítés, POST: üzenetkezelés.
     """
+    # GET kérés - Facebook hitelesítés
+    if request.method == 'GET':
+        mode = request.args.get('hub.mode')
+        token = request.args.get('hub.verify_token')
+        challenge = request.args.get('hub.challenge')
+        
+        print(f"🔐 Webhook hitelesítési kérés: mode={mode}, token={token}")
+        
+        if mode == 'subscribe' and token == VERIFY_TOKEN:
+            print("✅ Webhook hitelesítés sikeres!")
+            return challenge, 200
+        else:
+            print("❌ Webhook hitelesítés sikertelen!")
+            return 'Forbidden', 403
+    
+    # POST kérés - Üzenetkezelés
     data = request.get_json()
     print(f"📨 Webhook esemény érkezett: {data}")
     
