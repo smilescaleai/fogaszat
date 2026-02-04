@@ -18,7 +18,7 @@ VERIFY_TOKEN = "smilescale_token_2026"
 def load_page_data():
     """
     Letölti és feldolgozza a CSV fájlt a Google Sheets-ből.
-    Visszaad egy szótárat: {page_id: {"access_token": "...", "admin_password": "..."}}
+    Visszaad egy szótárat: {page_id: {"access_token": "...", "admin_password": "...", "welcome_text": "...", "button1_text": "...", stb.}}
     """
     try:
         print("📥 CSV letöltése a Google Sheets-ből...")
@@ -33,13 +33,29 @@ def load_page_data():
             page_id = row.get('page_id', '').strip()
             access_token = row.get('access_token', '').strip()
             admin_password = row.get('admin_password', '').strip()
+            welcome_text = row.get('welcome_text', '').strip()
+            
+            # Gombok adatai
+            button1_text = row.get('button1_text', '').strip()
+            button1_link = row.get('button1_link', '').strip()
+            button2_text = row.get('button2_text', '').strip()
+            button2_link = row.get('button2_link', '').strip()
+            button3_text = row.get('button3_text', '').strip()
+            button3_link = row.get('button3_link', '').strip()
             
             if page_id and access_token:
                 page_data[page_id] = {
                     "access_token": access_token,
-                    "admin_password": admin_password
+                    "admin_password": admin_password,
+                    "welcome_text": welcome_text,
+                    "button1_text": button1_text,
+                    "button1_link": button1_link,
+                    "button2_text": button2_text,
+                    "button2_link": button2_link,
+                    "button3_text": button3_text,
+                    "button3_link": button3_link
                 }
-                print(f"✅ Oldal betöltve: {page_id}")
+                print(f"✅ Oldal betöltve: {page_id} (gombok: {len([b for b in [button1_text, button2_text, button3_text] if b])})")
         
         print(f"✅ CSV sikeresen betöltve! Összesen {len(page_data)} oldal.")
         return page_data
@@ -48,9 +64,9 @@ def load_page_data():
         print(f"❌ Hiba a CSV letöltése során: {e}")
         return {}
 
-def send_message(page_id, recipient_id, message_text, access_token):
+def send_text_message(recipient_id, message_text, access_token):
     """
-    Üzenet küldése a Facebook Messenger API-n keresztül.
+    Egyszerű szöveges üzenet küldése (adminoknak).
     """
     url = f"https://graph.facebook.com/v18.0/me/messages"
     
@@ -65,13 +81,56 @@ def send_message(page_id, recipient_id, message_text, access_token):
     }
     
     try:
-        print(f"📤 Üzenet küldése a felhasználónak (PSID: {recipient_id})...")
+        print(f"📤 Szöveges üzenet küldése (PSID: {recipient_id})...")
         response = requests.post(url, json=payload, headers=headers, timeout=10)
         response.raise_for_status()
-        print(f"✅ Üzenet sikeresen elküldve! Válasz: {response.json()}")
+        print(f"✅ Üzenet sikeresen elküldve!")
         return True
     except Exception as e:
         print(f"❌ Hiba az üzenet küldése során: {e}")
+        if hasattr(e, 'response') and e.response:
+            print(f"❌ API válasz: {e.response.text}")
+        return False
+
+def send_generic_template(recipient_id, welcome_text, buttons, access_token):
+    """
+    Generic Template küldése gombokkal (normál felhasználóknak).
+    """
+    url = f"https://graph.facebook.com/v18.0/me/messages"
+    
+    headers = {
+        "Content-Type": "application/json"
+    }
+    
+    # Generic Template struktúra
+    payload = {
+        "recipient": {"id": recipient_id},
+        "message": {
+            "attachment": {
+                "type": "template",
+                "payload": {
+                    "template_type": "generic",
+                    "elements": [
+                        {
+                            "title": welcome_text,
+                            "buttons": buttons
+                        }
+                    ]
+                }
+            }
+        },
+        "access_token": access_token
+    }
+    
+    try:
+        print(f"📤 Generic Template küldése gombokkal (PSID: {recipient_id})...")
+        print(f"🎯 Gombok száma: {len(buttons)}")
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        response.raise_for_status()
+        print(f"✅ Template sikeresen elküldve!")
+        return True
+    except Exception as e:
+        print(f"❌ Hiba a template küldése során: {e}")
         if hasattr(e, 'response') and e.response:
             print(f"❌ API válasz: {e.response.text}")
         return False
@@ -127,10 +186,11 @@ def webhook():
                     print(f"❌ Nem található access token a {page_id} oldalhoz!")
                     continue
                 
-                access_token = page_data[page_id]['access_token']
-                admin_password = page_data[page_id]['admin_password']
+                page_info = page_data[page_id]
+                access_token = page_info['access_token']
+                admin_password = page_info['admin_password']
                 
-                print(f"✅ Access token megtalálva a {page_id} oldalhoz!")
+                print(f"✅ Üzenet érkezett a következő oldalra: {page_id}")
                 
                 # Üzenet feldolgozása
                 if messaging_event.get('message'):
@@ -149,18 +209,54 @@ def webhook():
                         
                         print(f"👑 Új admin regisztrálva! PSID: {sender_id}, Oldal: {page_id}")
                         response_text = f"Admin mód aktív: {message_text}"
+                        send_text_message(sender_id, response_text, access_token)
                     
                     # Ellenőrizzük, hogy admin-e a felhasználó
                     elif page_id in admin_users and sender_id in admin_users[page_id]:
                         print(f"👑 Admin felhasználó üzenete!")
                         response_text = f"Admin mód aktív: {message_text}"
+                        send_text_message(sender_id, response_text, access_token)
                     
                     else:
-                        print(f"👤 Normál felhasználó üzenete.")
-                        response_text = "A SmileScale AI rendszere aktív ezen az oldalon! 🦷"
-                    
-                    # Válasz küldése
-                    send_message(page_id, sender_id, response_text, access_token)
+                        print(f"👤 Normál felhasználó üzenete - Generic Template küldése...")
+                        
+                        # Gombok összeállítása a CSV adatokból
+                        buttons = []
+                        
+                        # 1. gomb
+                        if page_info.get('button1_text') and page_info.get('button1_link'):
+                            buttons.append({
+                                "type": "web_url",
+                                "url": page_info['button1_link'],
+                                "title": page_info['button1_text']
+                            })
+                        
+                        # 2. gomb
+                        if page_info.get('button2_text') and page_info.get('button2_link'):
+                            buttons.append({
+                                "type": "web_url",
+                                "url": page_info['button2_link'],
+                                "title": page_info['button2_text']
+                            })
+                        
+                        # 3. gomb
+                        if page_info.get('button3_text') and page_info.get('button3_link'):
+                            buttons.append({
+                                "type": "web_url",
+                                "url": page_info['button3_link'],
+                                "title": page_info['button3_text']
+                            })
+                        
+                        # Welcome text
+                        welcome_text = page_info.get('welcome_text', 'A SmileScale AI rendszere aktív ezen az oldalon! 🦷')
+                        
+                        # Ha vannak gombok, Generic Template-et küldünk
+                        if buttons:
+                            send_generic_template(sender_id, welcome_text, buttons, access_token)
+                        else:
+                            # Ha nincsenek gombok, egyszerű szöveget küldünk
+                            print("⚠️ Nincsenek gombok definiálva, szöveges üzenet küldése...")
+                            send_text_message(sender_id, welcome_text, access_token)
     
     return jsonify({"status": "ok"}), 200
 
