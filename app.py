@@ -357,6 +357,8 @@ def webhook():
                     
                     print(f"💬 Beérkező üzenet ID: {message_id}")
                     print(f"💬 Üzenet szövege: {message_text}")
+                    print(f"🔑 Admin jelszó a táblázatban: '{admin_password}'")
+                    print(f"🔍 Egyezés ellenőrzés: '{message_text}' == '{admin_password}' -> {message_text == admin_password}")
                     
                     # ELSŐ: Admin regisztráció ellenőrzése (legyen a legelső!)
                     if message_text == admin_password and admin_password:
