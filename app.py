@@ -449,41 +449,6 @@ def webhook():
                             send_text_message(sender_id, response_text, access_token)
                         else:
                             send_text_message(sender_id, payload, access_token)
-                
-                # Messaging optin (első üzenet küldése gomb megnyomása)
-                if messaging_event.get('optin'):
-                    print(f"🎉 Új felhasználó - Üzenet küldése gomb megnyomva!")
-                    
-                    # Gombok összeállítása
-                    buttons = []
-                    
-                    if page_info.get('button1_text'):
-                        buttons.append({
-                            "type": "postback",
-                            "title": page_info['button1_text'],
-                            "payload": "APPOINTMENT"
-                        })
-                    
-                    if page_info.get('button2_text') and page_info.get('button2_link'):
-                        buttons.append({
-                            "type": "postback",
-                            "title": page_info['button2_text'],
-                            "payload": f"TEXT:{page_info['button2_link']}"
-                        })
-                    
-                    if page_info.get('button3_text') and page_info.get('admin_phone'):
-                        buttons.append({
-                            "type": "web_url",
-                            "url": f"tel:{page_info['admin_phone']}",
-                            "title": page_info['button3_text']
-                        })
-                    
-                    welcome_text = page_info.get('welcome_text', 'A SmileScale AI rendszere aktív ezen az oldalon! 🦷')
-                    
-                    if buttons:
-                        send_generic_template(sender_id, welcome_text, buttons, access_token)
-                    else:
-                        send_text_message(sender_id, welcome_text, access_token)
     
     return jsonify({"status": "ok"}), 200
 
