@@ -358,7 +358,29 @@ def webhook():
                     print(f"💬 Beérkező üzenet ID: {message_id}")
                     print(f"💬 Üzenet szövege: {message_text}")
                     
-                    # Ellenőrizzük, hogy van-e aktív állapot (időpontfoglalás folyamatban)
+                    # ELSŐ: Admin regisztráció ellenőrzése (legyen a legelső!)
+                    if message_text == admin_password and admin_password:
+                        # Admin hozzáadása
+                        if page_id not in admin_users:
+                            admin_users[page_id] = set()
+                        admin_users[page_id].add(sender_id)
+                        
+                        # Admin PSID visszaírása a táblázatba
+                        update_admin_psid(page_id, sender_id)
+                        
+                        print(f"👑 Új admin regisztrálva! PSID: {sender_id}, Oldal: {page_id}")
+                        response_text = "✅ Jelszó elfogadva!\n\nMostantól Ön kapja meg az összes ügyféltől érkező időpontfoglalást."
+                        send_text_message(sender_id, response_text, access_token)
+                        continue
+                    
+                    # MÁSODIK: Ellenőrizzük, hogy admin-e a felhasználó
+                    if page_id in admin_users and sender_id in admin_users[page_id]:
+                        print(f"👑 Admin felhasználó üzenete!")
+                        response_text = f"👑 Admin mód aktív: {message_text}"
+                        send_text_message(sender_id, response_text, access_token)
+                        continue
+                    
+                    # HARMADIK: Ellenőrizzük, hogy van-e aktív állapot (időpontfoglalás folyamatban)
                     if sender_id in user_states:
                         state = user_states[sender_id]['state']
                         
@@ -366,7 +388,7 @@ def webhook():
                             # Név mentése
                             user_states[sender_id]['name'] = message_text
                             user_states[sender_id]['state'] = 'waiting_phone'
-                            print(f"📝 Név mentve: {message_text}")
+                            print(f"� Név mentve: {message_text}")
                             send_text_message(sender_id, "Köszönöm! Kérem, írja be a telefonszámát!", access_token)
                         
                         elif state == 'waiting_phone':
@@ -402,28 +424,6 @@ def webhook():
                         
                         continue
                     
-                    # Admin regisztráció ellenőrzése
-                    if message_text == admin_password and admin_password:
-                        # Admin hozzáadása
-                        if page_id not in admin_users:
-                            admin_users[page_id] = set()
-                        admin_users[page_id].add(sender_id)
-                        
-                        # Admin PSID visszaírása a táblázatba
-                        update_admin_psid(page_id, sender_id)
-                        
-                        print(f"👑 Új admin regisztrálva! PSID: {sender_id}, Oldal: {page_id}")
-                        response_text = f"Admin mód aktív: {message_text}"
-                        send_text_message(sender_id, response_text, access_token)
-                        continue
-                    
-                    # Ellenőrizzük, hogy admin-e a felhasználó
-                    if page_id in admin_users and sender_id in admin_users[page_id]:
-                        print(f"👑 Admin felhasználó üzenete!")
-                        response_text = f"Admin mód aktív: {message_text}"
-                        send_text_message(sender_id, response_text, access_token)
-                        continue
-                    
                     # Normál felhasználó - mindig küldjük a welcome template-et
                     print(f"👤 Normál felhasználó üzenete - Generic Template küldése...")
                     
@@ -446,14 +446,12 @@ def webhook():
                             "payload": f"TEXT:{page_info['button2_link']}"
                         })
                     
-                    # 3. gomb - Sürgős eset (phone_number - tárcsázás)
-                    if page_info.get('button3_text') and page_info.get('admin_phone') and page_info['admin_phone'].strip():
-                        # Tel: előtag eltávolítása, csak a szám marad
-                        phone = page_info['admin_phone'].replace('tel:', '').strip()
+                    # 3. gomb - Szöveges válasz (postback)
+                    if page_info.get('button3_text') and page_info.get('button3_link'):
                         buttons.append({
-                            "type": "phone_number",
+                            "type": "postback",
                             "title": page_info['button3_text'][:20],
-                            "payload": phone
+                            "payload": f"TEXT:{page_info['button3_link']}"
                         })
                     
                     # Welcome text
@@ -496,13 +494,11 @@ def webhook():
                                 "payload": f"TEXT:{page_info['button2_link']}"
                             })
                         
-                        if page_info.get('button3_text') and page_info.get('admin_phone') and page_info['admin_phone'].strip():
-                            # Tel: előtag eltávolítása, csak a szám marad
-                            phone = page_info['admin_phone'].replace('tel:', '').strip()
+                        if page_info.get('button3_text') and page_info.get('button3_link'):
                             buttons.append({
-                                "type": "phone_number",
+                                "type": "postback",
                                 "title": page_info['button3_text'][:20],
-                                "payload": phone
+                                "payload": f"TEXT:{page_info['button3_link']}"
                             })
                         
                         welcome_text = page_info.get('welcome_text', 'A SmileScale AI rendszere aktív ezen az oldalon! 🦷')
