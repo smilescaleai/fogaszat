@@ -1,10 +1,7 @@
 import os
 import csv
-import json
 import requests
-import gspread
 from datetime import datetime
-from google.oauth2.service_account import Credentials
 from flask import Flask, request, jsonify
 from io import StringIO
 
@@ -21,52 +18,6 @@ CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRO13uEpQukHL1hTzxeZU
 
 # Verify token
 VERIFY_TOKEN = "smilescale_token_2026"
-
-# Google Sheets setup
-SPREADSHEET_ID = os.environ.get('SPREADSHEET_ID')
-GOOGLE_CREDENTIALS = os.environ.get('GOOGLE_CREDENTIALS')
-
-def get_sheets_client():
-    """
-    Google Sheets API kliens létrehozása.
-    """
-    try:
-        creds_dict = json.loads(GOOGLE_CREDENTIALS)
-        creds = Credentials.from_service_account_info(
-            creds_dict,
-            scopes=['https://www.googleapis.com/auth/spreadsheets']
-        )
-        client = gspread.authorize(creds)
-        return client
-    except Exception as e:
-        print(f"❌ Hiba a Google Sheets kliens létrehozásakor: {e}")
-        return None
-
-def update_admin_psid(page_id, admin_psid):
-    """
-    Admin PSID visszaírása a Google Sheets táblázatba.
-    """
-    try:
-        client = get_sheets_client()
-        if not client:
-            return False
-        
-        sheet = client.open_by_key(SPREADSHEET_ID).sheet1
-        
-        # Keressük meg a page_id-t tartalmazó sort
-        cell = sheet.find(page_id)
-        if cell:
-            row = cell.row
-            # admin_psid a D oszlopba (4. oszlop)
-            sheet.update_cell(row, 4, admin_psid)
-            print(f"✅ Admin PSID frissítve a táblázatban: {page_id} -> {admin_psid}")
-            return True
-        else:
-            print(f"❌ Nem található page_id a táblázatban: {page_id}")
-            return False
-    except Exception as e:
-        print(f"❌ Hiba az admin PSID frissítésekor: {e}")
-        return False
 
 def load_page_data():
     """
@@ -322,9 +273,6 @@ def webhook():
                         if page_id not in admin_users:
                             admin_users[page_id] = set()
                         admin_users[page_id].add(sender_id)
-                        
-                        # Admin PSID visszaírása a táblázatba
-                        update_admin_psid(page_id, sender_id)
                         
                         print(f"👑 Új admin regisztrálva! PSID: {sender_id}, Oldal: {page_id}")
                         response_text = f"Admin mód aktív: {message_text}"
