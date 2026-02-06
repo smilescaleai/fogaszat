@@ -375,14 +375,7 @@ def webhook():
                         send_text_message(sender_id, response_text, access_token)
                         continue
                     
-                    # MÁSODIK: Ellenőrizzük, hogy admin-e a felhasználó (DE NE KÜLDJÜNK NEKI SEMMIT!)
-                    is_admin = page_id in admin_users and sender_id in admin_users[page_id]
-                    if is_admin:
-                        print(f"👑 Admin felhasználó üzenete - nem küldünk választ, csak logoljuk")
-                        # NEM küldünk választ az adminnak, csak logoljuk
-                        # continue - NEM használjuk, hadd menjen tovább a normál folyamat
-                    
-                    # HARMADIK: Ellenőrizzük, hogy van-e aktív állapot (időpontfoglalás folyamatban)
+                    # MÁSODIK: Ellenőrizzük, hogy van-e aktív állapot (időpontfoglalás folyamatban)
                     if sender_id in user_states:
                         state = user_states[sender_id]['state']
                         
@@ -409,26 +402,28 @@ def webhook():
                             print(f"💬 Panasz mentve: {complaint}")
                             print(f"✅ Időpontfoglalás teljes: {name}, {phone}, {complaint}")
                             
-                            # Admin értesítése
-                            if page_info.get('admin_psid'):
+                            # Megerősítő üzenet a usernek
+                            confirmation = page_info.get('button1_link', 'Köszönjük! Hamarosan felvesszük Önnel a kapcsolatot!')
+                            send_text_message(sender_id, confirmation, access_token)
+                            
+                            # Admin értesítése (ha NEM ő maga foglalt időpontot)
+                            is_admin = page_id in admin_users and sender_id in admin_users[page_id]
+                            if page_info.get('admin_psid') and not is_admin:
                                 admin_psid = page_info['admin_psid']
                                 timestamp = datetime.now().strftime("%Y.%m.%d %H:%M")
                                 admin_message = f"🦷 ÚJ IDŐPONTFOGLALÁS\n\n👤 Név: {name}\n📞 Telefon: {phone}\n💬 Panasz: {complaint}\n\n🕐 {timestamp}"
                                 send_text_message(admin_psid, admin_message, access_token)
                                 print(f"✅ Admin értesítve: {admin_psid}")
-                            
-                            # Megerősítő üzenet a usernek
-                            confirmation = page_info.get('button1_link', 'Köszönjük! Hamarosan felvesszük Önnel a kapcsolatot!')
-                            send_text_message(sender_id, confirmation, access_token)
+                            elif is_admin:
+                                print(f"👑 Admin saját időpontfoglalása - nem küldünk értesítést")
                             
                             # Állapot törlése
                             del user_states[sender_id]
                         
                         continue
                     
-                    # NEGYEDIK: Normál felhasználó - mindig küldjük a welcome template-et
-                    # (Admin is megkapja, hogy tudja tesztelni)
-                    print(f"👤 Normál felhasználó üzenete - Generic Template küldése...")
+                    # HARMADIK: Normál felhasználó (ÉS ADMIN IS!) - mindig küldjük a welcome template-et
+                    print(f"👤 Felhasználó üzenete - Generic Template küldése...")
                     
                     # Gombok összeállítása a CSV adatokból
                     buttons = []
