@@ -58,23 +58,36 @@ def update_admin_psid(page_id, admin_psid):
     try:
         client = get_sheets_client()
         if not client:
+            print("❌ Google Sheets kliens nem elérhető!")
             return False
         
+        print(f"🔍 Táblázat megnyitása: {SPREADSHEET_ID}")
         sheet = client.open_by_key(SPREADSHEET_ID).sheet1
         
         # Keressük meg a page_id-t tartalmazó sort
+        print(f"🔍 Page ID keresése: {page_id}")
         cell = sheet.find(page_id)
         if cell:
             row = cell.row
+            print(f"✅ Page ID megtalálva a {row}. sorban")
             # admin_psid a D oszlopba (4. oszlop)
             sheet.update_cell(row, 4, admin_psid)
             print(f"✅ Admin PSID frissítve a táblázatban: {page_id} -> {admin_psid}")
+            
+            # FONTOS: Frissítsük a cache-t is!
+            global cached_page_data
+            if page_id in cached_page_data:
+                cached_page_data[page_id]['admin_psid'] = admin_psid
+                print(f"✅ Cache frissítve!")
+            
             return True
         else:
             print(f"❌ Nem található page_id a táblázatban: {page_id}")
             return False
     except Exception as e:
         print(f"❌ Hiba az admin PSID frissítésekor: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 def setup_get_started_button(page_id, access_token):
