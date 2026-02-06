@@ -268,6 +268,8 @@ def webhook():
     """
     Facebook Webhook - GET: hitelesítés, POST: üzenetkezelés.
     """
+    global first_load
+    
     # GET kérés - Facebook hitelesítés
     if request.method == 'GET':
         mode = request.args.get('hub.mode')
@@ -288,7 +290,6 @@ def webhook():
     print(f"📨 Webhook esemény érkezett: {data}")
     
     # CSV adatok betöltése minden kérésnél (Get Started gomb beállítás nélkül)
-    global first_load
     page_data = load_page_data(setup_buttons=first_load)
     first_load = False  # Csak első alkalommal állítsa be a gombokat
     
