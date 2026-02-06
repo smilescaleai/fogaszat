@@ -406,16 +406,13 @@ def webhook():
                             confirmation = page_info.get('button1_link', 'Köszönjük! Hamarosan felvesszük Önnel a kapcsolatot!')
                             send_text_message(sender_id, confirmation, access_token)
                             
-                            # Admin értesítése (ha NEM ő maga foglalt időpontot)
-                            is_admin = page_id in admin_users and sender_id in admin_users[page_id]
-                            if page_info.get('admin_psid') and not is_admin:
+                            # Admin értesítése (MINDIG, még ha ő maga is foglalt)
+                            if page_info.get('admin_psid'):
                                 admin_psid = page_info['admin_psid']
                                 timestamp = datetime.now().strftime("%Y.%m.%d %H:%M")
                                 admin_message = f"🦷 ÚJ IDŐPONTFOGLALÁS\n\n👤 Név: {name}\n📞 Telefon: {phone}\n💬 Panasz: {complaint}\n\n🕐 {timestamp}"
                                 send_text_message(admin_psid, admin_message, access_token)
                                 print(f"✅ Admin értesítve: {admin_psid}")
-                            elif is_admin:
-                                print(f"👑 Admin saját időpontfoglalása - nem küldünk értesítést")
                             
                             # Állapot törlése
                             del user_states[sender_id]
