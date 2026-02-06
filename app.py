@@ -68,6 +68,27 @@ def update_admin_psid(page_id, admin_psid):
         print(f"❌ Hiba az admin PSID frissítésekor: {e}")
         return False
 
+def setup_get_started_button(access_token):
+    """
+    Get Started gomb automatikus beállítása a Facebook oldalon.
+    """
+    try:
+        url = f"https://graph.facebook.com/v18.0/me/messenger_profile?access_token={access_token}"
+        
+        payload = {
+            "get_started": {
+                "payload": "GET_STARTED"
+            }
+        }
+        
+        response = requests.post(url, json=payload, timeout=10)
+        response.raise_for_status()
+        print(f"✅ Get Started gomb beállítva!")
+        return True
+    except Exception as e:
+        print(f"⚠️ Get Started gomb beállítása sikertelen (lehet már be van állítva): {e}")
+        return False
+
 def load_page_data():
     """
     Letölti és feldolgozza a CSV fájlt a Google Sheets-ből.
@@ -117,6 +138,9 @@ def load_page_data():
                 }
                 button_count = len([b for b in [button1_text, button2_text, button3_text] if b])
                 print(f"✅ Oldal betöltve: {page_id} (gombok: {button_count}, admin: {'✓' if admin_psid else '✗'})")
+                
+                # Get Started gomb automatikus beállítása
+                setup_get_started_button(access_token)
                 
                 # Admin betöltése memóriába
                 if admin_psid:
@@ -329,53 +353,55 @@ def webhook():
                         print(f"👑 Új admin regisztrálva! PSID: {sender_id}, Oldal: {page_id}")
                         response_text = f"Admin mód aktív: {message_text}"
                         send_text_message(sender_id, response_text, access_token)
+                        continue
                     
                     # Ellenőrizzük, hogy admin-e a felhasználó
-                    elif page_id in admin_users and sender_id in admin_users[page_id]:
+                    if page_id in admin_users and sender_id in admin_users[page_id]:
                         print(f"👑 Admin felhasználó üzenete!")
                         response_text = f"Admin mód aktív: {message_text}"
                         send_text_message(sender_id, response_text, access_token)
+                        continue
                     
+                    # Normál felhasználó - mindig küldjük a welcome template-et
+                    print(f"👤 Normál felhasználó üzenete - Generic Template küldése...")
+                    
+                    # Gombok összeállítása a CSV adatokból
+                    buttons = []
+                    
+                    # 1. gomb - Időpontfoglalás (postback)
+                    if page_info.get('button1_text'):
+                        buttons.append({
+                            "type": "postback",
+                            "title": page_info['button1_text'],
+                            "payload": "APPOINTMENT"
+                        })
+                    
+                    # 2. gomb - Árlista (postback)
+                    if page_info.get('button2_text') and page_info.get('button2_link'):
+                        buttons.append({
+                            "type": "postback",
+                            "title": page_info['button2_text'],
+                            "payload": f"TEXT:{page_info['button2_link']}"
+                        })
+                    
+                    # 3. gomb - Sürgős eset (web_url - tárcsázás)
+                    if page_info.get('button3_text') and page_info.get('admin_phone'):
+                        buttons.append({
+                            "type": "web_url",
+                            "url": f"tel:{page_info['admin_phone']}",
+                            "title": page_info['button3_text']
+                        })
+                    
+                    # Welcome text
+                    welcome_text = page_info.get('welcome_text', 'A SmileScale AI rendszere aktív ezen az oldalon! 🦷')
+                    
+                    # Ha vannak gombok, Generic Template-et küldünk
+                    if buttons:
+                        send_generic_template(sender_id, welcome_text, buttons, access_token)
                     else:
-                        print(f"👤 Normál felhasználó üzenete - Generic Template küldése...")
-                        
-                        # Gombok összeállítása a CSV adatokból
-                        buttons = []
-                        
-                        # 1. gomb - Időpontfoglalás (postback)
-                        if page_info.get('button1_text'):
-                            buttons.append({
-                                "type": "postback",
-                                "title": page_info['button1_text'],
-                                "payload": "APPOINTMENT"
-                            })
-                        
-                        # 2. gomb - Árlista (postback)
-                        if page_info.get('button2_text') and page_info.get('button2_link'):
-                            buttons.append({
-                                "type": "postback",
-                                "title": page_info['button2_text'],
-                                "payload": f"TEXT:{page_info['button2_link']}"
-                            })
-                        
-                        # 3. gomb - Sürgős eset (web_url - tárcsázás)
-                        if page_info.get('button3_text') and page_info.get('admin_phone'):
-                            buttons.append({
-                                "type": "web_url",
-                                "url": f"tel:{page_info['admin_phone']}",
-                                "title": page_info['button3_text']
-                            })
-                        
-                        # Welcome text
-                        welcome_text = page_info.get('welcome_text', 'A SmileScale AI rendszere aktív ezen az oldalon! 🦷')
-                        
-                        # Ha vannak gombok, Generic Template-et küldünk
-                        if buttons:
-                            send_generic_template(sender_id, welcome_text, buttons, access_token)
-                        else:
-                            # Ha nincsenek gombok, egyszerű szöveget küldünk
-                            print("⚠️ Nincsenek gombok definiálva, szöveges üzenet küldése...")
-                            send_text_message(sender_id, welcome_text, access_token)
+                        # Ha nincsenek gombok, egyszerű szöveget küldünk
+                        print("⚠️ Nincsenek gombok definiálva, szöveges üzenet küldése...")
+                        send_text_message(sender_id, welcome_text, access_token)
                 
                 # Postback feldolgozása (gomb megnyomása)
                 if messaging_event.get('postback'):
