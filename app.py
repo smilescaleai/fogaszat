@@ -105,6 +105,13 @@ def setup_get_started_button(page_id, access_token):
         # Hozzáadjuk a set-hez, hogy ne próbálja újra
         get_started_setup.add(page_id)
         return False
+        get_started_setup.add(page_id)
+        return True
+    except Exception as e:
+        print(f"⚠️ Get Started gomb beállítása sikertelen (page_id: {page_id}): {e}")
+        # Hozzáadjuk a set-hez, hogy ne próbálja újra
+        get_started_setup.add(page_id)
+        return False
 
 def load_page_data():
     """
