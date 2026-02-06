@@ -163,8 +163,9 @@ def load_page_data():
                 button_count = len([b for b in [button1_text, button2_text, button3_text] if b])
                 print(f"✅ Oldal betöltve: {page_id} (gombok: {button_count}, admin: {'✓' if admin_psid else '✗'})")
                 
-                # Get Started gomb automatikus beállítása (csak egyszer)
-                setup_get_started_button(page_id, access_token)
+                # Get Started gomb beállítása (csak ha még nincs a set-ben)
+                if page_id not in get_started_setup:
+                    setup_get_started_button(page_id, access_token)
                 
                 # Admin betöltése memóriába
                 if admin_psid:
