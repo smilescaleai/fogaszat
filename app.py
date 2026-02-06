@@ -1,6 +1,10 @@
 import os
 import csv
+import json
 import requests
+import gspread
+from datetime import datetime
+from google.oauth2.service_account import Credentials
 from flask import Flask, request, jsonify
 from io import StringIO
 
@@ -9,16 +13,65 @@ app = Flask(__name__)
 # Admin felhasználók tárolása (PSID alapján, page_id szerint csoportosítva)
 admin_users = {}
 
+# Felhasználói állapotok tárolása (időpontfoglaláshoz)
+user_states = {}
+
 # CSV URL a Google Sheets-ből
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRO13uEpQukHL1hTzxeZUjGYPaUPQ7XaKTjVWnbhlh2KnvOztWLASO6Jmu8782-4vx0Dco64xEVi2pO/pub?output=csv"
 
 # Verify token
 VERIFY_TOKEN = "smilescale_token_2026"
 
+# Google Sheets setup
+SPREADSHEET_ID = os.environ.get('SPREADSHEET_ID')
+GOOGLE_CREDENTIALS = os.environ.get('GOOGLE_CREDENTIALS')
+
+def get_sheets_client():
+    """
+    Google Sheets API kliens létrehozása.
+    """
+    try:
+        creds_dict = json.loads(GOOGLE_CREDENTIALS)
+        creds = Credentials.from_service_account_info(
+            creds_dict,
+            scopes=['https://www.googleapis.com/auth/spreadsheets']
+        )
+        client = gspread.authorize(creds)
+        return client
+    except Exception as e:
+        print(f"❌ Hiba a Google Sheets kliens létrehozásakor: {e}")
+        return None
+
+def update_admin_psid(page_id, admin_psid):
+    """
+    Admin PSID visszaírása a Google Sheets táblázatba.
+    """
+    try:
+        client = get_sheets_client()
+        if not client:
+            return False
+        
+        sheet = client.open_by_key(SPREADSHEET_ID).sheet1
+        
+        # Keressük meg a page_id-t tartalmazó sort
+        cell = sheet.find(page_id)
+        if cell:
+            row = cell.row
+            # admin_psid a D oszlopba (4. oszlop)
+            sheet.update_cell(row, 4, admin_psid)
+            print(f"✅ Admin PSID frissítve a táblázatban: {page_id} -> {admin_psid}")
+            return True
+        else:
+            print(f"❌ Nem található page_id a táblázatban: {page_id}")
+            return False
+    except Exception as e:
+        print(f"❌ Hiba az admin PSID frissítésekor: {e}")
+        return False
+
 def load_page_data():
     """
     Letölti és feldolgozza a CSV fájlt a Google Sheets-ből.
-    Visszaad egy szótárat: {page_id: {"access_token": "...", "admin_password": "...", "welcome_text": "...", stb.}}
+    Visszaad egy szótárat: {page_id: {"access_token": "...", "admin_password": "...", "admin_psid": "...", stb.}}
     """
     try:
         print("📥 CSV letöltése a Google Sheets-ből...")
@@ -36,6 +89,8 @@ def load_page_data():
             page_id = str(row.get('page_id', '')).strip()
             access_token = str(row.get('access_token', '')).strip()
             admin_password = str(row.get('admin_password', '')).strip()
+            admin_psid = str(row.get('admin_psid', '')).strip()
+            admin_phone = str(row.get('admin_phone', '')).strip()
             welcome_text = str(row.get('welcome_text', '')).strip()
             
             # Gombok adatai
@@ -50,6 +105,8 @@ def load_page_data():
                 page_data[page_id] = {
                     "access_token": access_token,
                     "admin_password": admin_password,
+                    "admin_psid": admin_psid,
+                    "admin_phone": admin_phone,
                     "welcome_text": welcome_text,
                     "button1_text": button1_text,
                     "button1_link": button1_link,
@@ -59,7 +116,13 @@ def load_page_data():
                     "button3_link": button3_link
                 }
                 button_count = len([b for b in [button1_text, button2_text, button3_text] if b])
-                print(f"✅ Oldal betöltve: {page_id} (gombok: {button_count})")
+                print(f"✅ Oldal betöltve: {page_id} (gombok: {button_count}, admin: {'✓' if admin_psid else '✗'})")
+                
+                # Admin betöltése memóriába
+                if admin_psid:
+                    if page_id not in admin_users:
+                        admin_users[page_id] = set()
+                    admin_users[page_id].add(admin_psid)
         
         print(f"✅ CSV sikeresen betöltve! Összesen {len(page_data)} oldal.")
         return page_data
@@ -209,12 +272,59 @@ def webhook():
                     print(f"💬 Beérkező üzenet ID: {message_id}")
                     print(f"💬 Üzenet szövege: {message_text}")
                     
+                    # Ellenőrizzük, hogy van-e aktív állapot (időpontfoglalás folyamatban)
+                    if sender_id in user_states:
+                        state = user_states[sender_id]['state']
+                        
+                        if state == 'waiting_name':
+                            # Név mentése
+                            user_states[sender_id]['name'] = message_text
+                            user_states[sender_id]['state'] = 'waiting_phone'
+                            print(f"📝 Név mentve: {message_text}")
+                            send_text_message(sender_id, "Köszönöm! Kérem, írja be a telefonszámát!", access_token)
+                        
+                        elif state == 'waiting_phone':
+                            # Telefonszám mentése
+                            user_states[sender_id]['phone'] = message_text
+                            user_states[sender_id]['state'] = 'waiting_complaint'
+                            print(f"📞 Telefonszám mentve: {message_text}")
+                            send_text_message(sender_id, "Köszönöm! Miben segíthetünk? (pl. fogfájás, tisztítás, ellenőrzés)", access_token)
+                        
+                        elif state == 'waiting_complaint':
+                            # Panasz mentése és feldolgozás
+                            complaint = message_text
+                            name = user_states[sender_id]['name']
+                            phone = user_states[sender_id]['phone']
+                            
+                            print(f"💬 Panasz mentve: {complaint}")
+                            print(f"✅ Időpontfoglalás teljes: {name}, {phone}, {complaint}")
+                            
+                            # Admin értesítése
+                            if page_info.get('admin_psid'):
+                                admin_psid = page_info['admin_psid']
+                                timestamp = datetime.now().strftime("%Y.%m.%d %H:%M")
+                                admin_message = f"🦷 ÚJ IDŐPONTFOGLALÁS\n\n👤 Név: {name}\n📞 Telefon: {phone}\n💬 Panasz: {complaint}\n\n🕐 {timestamp}"
+                                send_text_message(admin_psid, admin_message, access_token)
+                                print(f"✅ Admin értesítve: {admin_psid}")
+                            
+                            # Megerősítő üzenet a usernek
+                            confirmation = page_info.get('button1_link', 'Köszönjük! Hamarosan felvesszük Önnel a kapcsolatot!')
+                            send_text_message(sender_id, confirmation, access_token)
+                            
+                            # Állapot törlése
+                            del user_states[sender_id]
+                        
+                        continue
+                    
                     # Admin regisztráció ellenőrzése
                     if message_text == admin_password and admin_password:
                         # Admin hozzáadása
                         if page_id not in admin_users:
                             admin_users[page_id] = set()
                         admin_users[page_id].add(sender_id)
+                        
+                        # Admin PSID visszaírása a táblázatba
+                        update_admin_psid(page_id, sender_id)
                         
                         print(f"👑 Új admin regisztrálva! PSID: {sender_id}, Oldal: {page_id}")
                         response_text = f"Admin mód aktív: {message_text}"
@@ -229,31 +339,31 @@ def webhook():
                     else:
                         print(f"👤 Normál felhasználó üzenete - Generic Template küldése...")
                         
-                        # Gombok összeállítása a CSV adatokból (POSTBACK típussal)
+                        # Gombok összeállítása a CSV adatokból
                         buttons = []
                         
-                        # 1. gomb
-                        if page_info.get('button1_text') and page_info.get('button1_link'):
+                        # 1. gomb - Időpontfoglalás (postback)
+                        if page_info.get('button1_text'):
                             buttons.append({
                                 "type": "postback",
                                 "title": page_info['button1_text'],
-                                "payload": page_info['button1_link']
+                                "payload": "APPOINTMENT"
                             })
                         
-                        # 2. gomb
+                        # 2. gomb - Árlista (postback)
                         if page_info.get('button2_text') and page_info.get('button2_link'):
                             buttons.append({
                                 "type": "postback",
                                 "title": page_info['button2_text'],
-                                "payload": page_info['button2_link']
+                                "payload": f"TEXT:{page_info['button2_link']}"
                             })
                         
-                        # 3. gomb
-                        if page_info.get('button3_text') and page_info.get('button3_link'):
+                        # 3. gomb - Sürgős eset (web_url - tárcsázás)
+                        if page_info.get('button3_text') and page_info.get('admin_phone'):
                             buttons.append({
-                                "type": "postback",
-                                "title": page_info['button3_text'],
-                                "payload": page_info['button3_link']
+                                "type": "web_url",
+                                "url": f"tel:{page_info['admin_phone']}",
+                                "title": page_info['button3_text']
                             })
                         
                         # Welcome text
@@ -275,15 +385,103 @@ def webhook():
                     print(f"🔘 Postback érkezett: {postback_title}")
                     print(f"📦 Payload: {payload}")
                     
-                    # Ellenőrizzük, hogy admin-e a felhasználó
-                    if page_id in admin_users and sender_id in admin_users[page_id]:
-                        print(f"👑 Admin felhasználó postback-je!")
-                        response_text = f"Admin mód aktív: {payload}"
-                        send_text_message(sender_id, response_text, access_token)
+                    # Get Started gomb
+                    if payload == 'GET_STARTED':
+                        print(f"🎉 Get Started gomb megnyomva!")
+                        
+                        # Gombok összeállítása
+                        buttons = []
+                        
+                        if page_info.get('button1_text'):
+                            buttons.append({
+                                "type": "postback",
+                                "title": page_info['button1_text'],
+                                "payload": "APPOINTMENT"
+                            })
+                        
+                        if page_info.get('button2_text') and page_info.get('button2_link'):
+                            buttons.append({
+                                "type": "postback",
+                                "title": page_info['button2_text'],
+                                "payload": f"TEXT:{page_info['button2_link']}"
+                            })
+                        
+                        if page_info.get('button3_text') and page_info.get('admin_phone'):
+                            buttons.append({
+                                "type": "web_url",
+                                "url": f"tel:{page_info['admin_phone']}",
+                                "title": page_info['button3_text']
+                            })
+                        
+                        welcome_text = page_info.get('welcome_text', 'A SmileScale AI rendszere aktív ezen az oldalon! 🦷')
+                        
+                        if buttons:
+                            send_generic_template(sender_id, welcome_text, buttons, access_token)
+                        else:
+                            send_text_message(sender_id, welcome_text, access_token)
+                    
+                    # Időpontfoglalás indítása
+                    elif payload == 'APPOINTMENT':
+                        print(f"📅 Időpontfoglalás indítása: {sender_id}")
+                        user_states[sender_id] = {
+                            'state': 'waiting_name',
+                            'page_id': page_id
+                        }
+                        send_text_message(sender_id, "Kérem, írja be a nevét!", access_token)
+                    
+                    # Szöveges válasz (árlista, stb.)
+                    elif payload.startswith('TEXT:'):
+                        response_text = payload[5:]  # "TEXT:" eltávolítása
+                        print(f"📝 Szöveges válasz küldése: {response_text[:50]}...")
+                        
+                        # Admin ellenőrzés
+                        if page_id in admin_users and sender_id in admin_users[page_id]:
+                            send_text_message(sender_id, f"Admin mód aktív: {response_text}", access_token)
+                        else:
+                            send_text_message(sender_id, response_text, access_token)
+                    
+                    # Egyéb postback (régi kompatibilitás)
                     else:
-                        # Normál felhasználónak küldjük a payload tartalmát
-                        print(f"👤 Normál felhasználó postback-je - payload küldése...")
-                        send_text_message(sender_id, payload, access_token)
+                        if page_id in admin_users and sender_id in admin_users[page_id]:
+                            response_text = f"Admin mód aktív: {payload}"
+                            send_text_message(sender_id, response_text, access_token)
+                        else:
+                            send_text_message(sender_id, payload, access_token)
+                
+                # Messaging optin (első üzenet küldése gomb megnyomása)
+                if messaging_event.get('optin'):
+                    print(f"🎉 Új felhasználó - Üzenet küldése gomb megnyomva!")
+                    
+                    # Gombok összeállítása
+                    buttons = []
+                    
+                    if page_info.get('button1_text'):
+                        buttons.append({
+                            "type": "postback",
+                            "title": page_info['button1_text'],
+                            "payload": "APPOINTMENT"
+                        })
+                    
+                    if page_info.get('button2_text') and page_info.get('button2_link'):
+                        buttons.append({
+                            "type": "postback",
+                            "title": page_info['button2_text'],
+                            "payload": f"TEXT:{page_info['button2_link']}"
+                        })
+                    
+                    if page_info.get('button3_text') and page_info.get('admin_phone'):
+                        buttons.append({
+                            "type": "web_url",
+                            "url": f"tel:{page_info['admin_phone']}",
+                            "title": page_info['button3_text']
+                        })
+                    
+                    welcome_text = page_info.get('welcome_text', 'A SmileScale AI rendszere aktív ezen az oldalon! 🦷')
+                    
+                    if buttons:
+                        send_generic_template(sender_id, welcome_text, buttons, access_token)
+                    else:
+                        send_text_message(sender_id, welcome_text, access_token)
     
     return jsonify({"status": "ok"}), 200
 
