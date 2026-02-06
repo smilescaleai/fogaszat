@@ -16,6 +16,9 @@ admin_users = {}
 # Felhasználói állapotok tárolása (időpontfoglaláshoz)
 user_states = {}
 
+# Get Started gomb beállítva (page_id szerint)
+get_started_setup = set()
+
 # CSV URL a Google Sheets-ből
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRO13uEpQukHL1hTzxeZUjGYPaUPQ7XaKTjVWnbhlh2KnvOztWLASO6Jmu8782-4vx0Dco64xEVi2pO/pub?output=csv"
 
@@ -68,10 +71,15 @@ def update_admin_psid(page_id, admin_psid):
         print(f"❌ Hiba az admin PSID frissítésekor: {e}")
         return False
 
-def setup_get_started_button(access_token):
+def setup_get_started_button(page_id, access_token):
     """
     Get Started gomb automatikus beállítása a Facebook oldalon.
+    Csak egyszer fut le oldalanként.
     """
+    # Ha már be van állítva, ne csináljuk újra
+    if page_id in get_started_setup:
+        return True
+    
     try:
         url = f"https://graph.facebook.com/v18.0/me/messenger_profile?access_token={access_token}"
         
@@ -82,11 +90,20 @@ def setup_get_started_button(access_token):
         }
         
         response = requests.post(url, json=payload, timeout=10)
+        
+        # Ha már be van állítva, az is OK
+        if response.status_code in [200, 400]:
+            get_started_setup.add(page_id)
+            print(f"✅ Get Started gomb beállítva (page_id: {page_id})")
+            return True
+        
         response.raise_for_status()
-        print(f"✅ Get Started gomb beállítva!")
+        get_started_setup.add(page_id)
         return True
     except Exception as e:
-        print(f"⚠️ Get Started gomb beállítása sikertelen (lehet már be van állítva): {e}")
+        print(f"⚠️ Get Started gomb beállítása sikertelen (page_id: {page_id}): {e}")
+        # Hozzáadjuk a set-hez, hogy ne próbálja újra
+        get_started_setup.add(page_id)
         return False
 
 def load_page_data():
@@ -139,8 +156,8 @@ def load_page_data():
                 button_count = len([b for b in [button1_text, button2_text, button3_text] if b])
                 print(f"✅ Oldal betöltve: {page_id} (gombok: {button_count}, admin: {'✓' if admin_psid else '✗'})")
                 
-                # Get Started gomb automatikus beállítása
-                setup_get_started_button(access_token)
+                # Get Started gomb automatikus beállítása (csak egyszer)
+                setup_get_started_button(page_id, access_token)
                 
                 # Admin betöltése memóriába
                 if admin_psid:
