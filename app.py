@@ -127,6 +127,7 @@ def load_page_data():
         
         page_data = {}
         for row in reader:
+            # Adatok tisztítása és validálása
             page_id = str(row.get('page_id', '')).strip()
             access_token = str(row.get('access_token', '')).strip()
             admin_password = str(row.get('admin_password', '')).strip()
@@ -134,7 +135,7 @@ def load_page_data():
             admin_phone = str(row.get('admin_phone', '')).strip()
             welcome_text = str(row.get('welcome_text', '')).strip()
             
-            # Gombok adatai
+            # Gombok adatai - tisztítás és validálás
             button1_text = str(row.get('button1_text', '')).strip()
             button1_link = str(row.get('button1_link', '')).strip()
             button2_text = str(row.get('button2_text', '')).strip()
@@ -142,25 +143,32 @@ def load_page_data():
             button3_text = str(row.get('button3_text', '')).strip()
             button3_link = str(row.get('button3_link', '')).strip()
             
-            if page_id and access_token:
+            # Csak akkor adjuk hozzá, ha van page_id és access_token
+            if page_id and access_token and page_id != 'nan' and access_token != 'nan':
+                # Üres értékek helyett None
                 page_data[page_id] = {
                     "access_token": access_token,
-                    "admin_password": admin_password,
-                    "admin_psid": admin_psid,
-                    "admin_phone": admin_phone,
-                    "welcome_text": welcome_text,
-                    "button1_text": button1_text,
-                    "button1_link": button1_link,
-                    "button2_text": button2_text,
-                    "button2_link": button2_link,
-                    "button3_text": button3_text,
-                    "button3_link": button3_link
+                    "admin_password": admin_password if admin_password and admin_password != 'nan' else '',
+                    "admin_psid": admin_psid if admin_psid and admin_psid != 'nan' else '',
+                    "admin_phone": admin_phone if admin_phone and admin_phone != 'nan' else '',
+                    "welcome_text": welcome_text if welcome_text and welcome_text != 'nan' else 'Üdvözöljük! 🦷',
+                    "button1_text": button1_text if button1_text and button1_text != 'nan' else '',
+                    "button1_link": button1_link if button1_link and button1_link != 'nan' else '',
+                    "button2_text": button2_text if button2_text and button2_text != 'nan' else '',
+                    "button2_link": button2_link if button2_link and button2_link != 'nan' else '',
+                    "button3_text": button3_text if button3_text and button3_text != 'nan' else '',
+                    "button3_link": button3_link if button3_link and button3_link != 'nan' else ''
                 }
-                button_count = len([b for b in [button1_text, button2_text, button3_text] if b])
-                print(f"✅ Oldal betöltve: {page_id} (gombok: {button_count}, admin: {'✓' if admin_psid else '✗'})")
+                
+                button_count = len([b for b in [button1_text, button2_text, button3_text] if b and b != 'nan'])
+                print(f"✅ Oldal betöltve: {page_id}")
+                print(f"   - Gombok: {button_count}")
+                print(f"   - Admin: {'✓' if admin_psid and admin_psid != 'nan' else '✗'}")
+                print(f"   - Admin phone: {'✓' if admin_phone and admin_phone != 'nan' else '✗'}")
+                print(f"   - Welcome text: {welcome_text[:30]}...")
                 
                 # Admin betöltése memóriába
-                if admin_psid:
+                if admin_psid and admin_psid != 'nan':
                     if page_id not in admin_users:
                         admin_users[page_id] = set()
                     admin_users[page_id].add(admin_psid)
@@ -438,12 +446,14 @@ def webhook():
                             "payload": f"TEXT:{page_info['button2_link']}"
                         })
                     
-                    # 3. gomb - Sürgős eset (web_url - tárcsázás)
+                    # 3. gomb - Sürgős eset (phone_number - tárcsázás)
                     if page_info.get('button3_text') and page_info.get('admin_phone') and page_info['admin_phone'].strip():
+                        # Tel: előtag eltávolítása, csak a szám marad
+                        phone = page_info['admin_phone'].replace('tel:', '').strip()
                         buttons.append({
-                            "type": "web_url",
-                            "url": f"tel:{page_info['admin_phone']}",
-                            "title": page_info['button3_text'][:20]
+                            "type": "phone_number",
+                            "title": page_info['button3_text'][:20],
+                            "payload": phone
                         })
                     
                     # Welcome text
@@ -487,10 +497,12 @@ def webhook():
                             })
                         
                         if page_info.get('button3_text') and page_info.get('admin_phone') and page_info['admin_phone'].strip():
+                            # Tel: előtag eltávolítása, csak a szám marad
+                            phone = page_info['admin_phone'].replace('tel:', '').strip()
                             buttons.append({
-                                "type": "web_url",
-                                "url": f"tel:{page_info['admin_phone']}",
-                                "title": page_info['button3_text'][:20]
+                                "type": "phone_number",
+                                "title": page_info['button3_text'][:20],
+                                "payload": phone
                             })
                         
                         welcome_text = page_info.get('welcome_text', 'A SmileScale AI rendszere aktív ezen az oldalon! 🦷')
