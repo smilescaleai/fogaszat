@@ -1,7 +1,10 @@
 import os
 import csv
+import json
 import requests
+import gspread
 from datetime import datetime
+from google.oauth2.service_account import Credentials
 from flask import Flask, request, jsonify
 from io import StringIO
 
@@ -13,11 +16,95 @@ admin_users = {}
 # Felhasználói állapotok tárolása (időpontfoglaláshoz)
 user_states = {}
 
+# Get Started gomb beállítva (page_id szerint)
+get_started_setup = set()
+
+# Szerver indulás flag
+server_started = False
+
 # CSV URL a Google Sheets-ből
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRO13uEpQukHL1hTzxeZUjGYPaUPQ7XaKTjVWnbhlh2KnvOztWLASO6Jmu8782-4vx0Dco64xEVi2pO/pub?output=csv"
 
 # Verify token
 VERIFY_TOKEN = "smilescale_token_2026"
+
+# Google Sheets setup
+SPREADSHEET_ID = os.environ.get('SPREADSHEET_ID')
+GOOGLE_CREDENTIALS = os.environ.get('GOOGLE_CREDENTIALS')
+
+def get_sheets_client():
+    """
+    Google Sheets API kliens létrehozása.
+    """
+    try:
+        creds_dict = json.loads(GOOGLE_CREDENTIALS)
+        creds = Credentials.from_service_account_info(
+            creds_dict,
+            scopes=['https://www.googleapis.com/auth/spreadsheets']
+        )
+        client = gspread.authorize(creds)
+        return client
+    except Exception as e:
+        print(f"❌ Hiba a Google Sheets kliens létrehozásakor: {e}")
+        return None
+
+def update_admin_psid(page_id, admin_psid):
+    """
+    Admin PSID visszaírása a Google Sheets táblázatba.
+    """
+    try:
+        client = get_sheets_client()
+        if not client:
+            return False
+        
+        sheet = client.open_by_key(SPREADSHEET_ID).sheet1
+        
+        # Keressük meg a page_id-t tartalmazó sort
+        cell = sheet.find(page_id)
+        if cell:
+            row = cell.row
+            # admin_psid a D oszlopba (4. oszlop)
+            sheet.update_cell(row, 4, admin_psid)
+            print(f"✅ Admin PSID frissítve a táblázatban: {page_id} -> {admin_psid}")
+            return True
+        else:
+            print(f"❌ Nem található page_id a táblázatban: {page_id}")
+            return False
+    except Exception as e:
+        print(f"❌ Hiba az admin PSID frissítésekor: {e}")
+        return False
+
+def setup_get_started_button(page_id, access_token):
+    """
+    Get Started gomb beállítása (csak egyszer oldalanként).
+    """
+    if page_id in get_started_setup:
+        return True
+    
+    try:
+        url = f"https://graph.facebook.com/v18.0/me/messenger_profile?access_token={access_token}"
+        
+        payload = {
+            "get_started": {
+                "payload": "GET_STARTED"
+            }
+        }
+        
+        response = requests.post(url, json=payload, timeout=10)
+        
+        # 200 = sikeres, 400 = már be van állítva (ez is OK)
+        if response.status_code in [200, 400]:
+            get_started_setup.add(page_id)
+            print(f"✅ Get Started gomb beállítva (page_id: {page_id})")
+            return True
+        
+        response.raise_for_status()
+        get_started_setup.add(page_id)
+        return True
+    except Exception as e:
+        print(f"⚠️ Get Started gomb hiba (page_id: {page_id}): {e}")
+        get_started_setup.add(page_id)  # Ne próbálja újra
+        return False
 
 def load_page_data():
     """
@@ -130,8 +217,9 @@ def send_generic_template(recipient_id, welcome_text, buttons, access_token):
                     "template_type": "generic",
                     "elements": [
                         {
-                            "title": welcome_text,
-                            "buttons": buttons
+                            "title": welcome_text[:80],  # Max 80 karakter
+                            "subtitle": " ",  # Kötelező mező (legalább 1 szóköz)
+                            "buttons": buttons[:3]  # Max 3 gomb
                         }
                     ]
                 }
@@ -152,6 +240,9 @@ def send_generic_template(recipient_id, welcome_text, buttons, access_token):
         if hasattr(e, 'response') and e.response:
             print(f"❌ API válasz: {e.response.text}")
         return False
+        if hasattr(e, 'response') and e.response:
+            print(f"❌ API válasz: {e.response.text}")
+        return False
 
 @app.route('/')
 def home():
@@ -165,6 +256,8 @@ def webhook():
     """
     Facebook Webhook - GET: hitelesítés, POST: üzenetkezelés.
     """
+    global server_started
+    
     # GET kérés - Facebook hitelesítés
     if request.method == 'GET':
         mode = request.args.get('hub.mode')
@@ -186,6 +279,13 @@ def webhook():
     
     # CSV adatok betöltése minden kérésnél
     page_data = load_page_data()
+    
+    # Get Started gomb beállítása (csak első POST kérésnél)
+    if not server_started:
+        print("🎬 Első webhook kérés - Get Started gombok beállítása...")
+        for page_id, page_info in page_data.items():
+            setup_get_started_button(page_id, page_info['access_token'])
+        server_started = True
     
     if not page_data:
         print("❌ Nem sikerült betölteni az oldal adatokat!")
@@ -274,6 +374,9 @@ def webhook():
                             admin_users[page_id] = set()
                         admin_users[page_id].add(sender_id)
                         
+                        # Admin PSID visszaírása a táblázatba
+                        update_admin_psid(page_id, sender_id)
+                        
                         print(f"👑 Új admin regisztrálva! PSID: {sender_id}, Oldal: {page_id}")
                         response_text = f"Admin mód aktív: {message_text}"
                         send_text_message(sender_id, response_text, access_token)
@@ -296,7 +399,7 @@ def webhook():
                     if page_info.get('button1_text'):
                         buttons.append({
                             "type": "postback",
-                            "title": page_info['button1_text'],
+                            "title": page_info['button1_text'][:20],
                             "payload": "APPOINTMENT"
                         })
                     
@@ -304,7 +407,7 @@ def webhook():
                     if page_info.get('button2_text') and page_info.get('button2_link'):
                         buttons.append({
                             "type": "postback",
-                            "title": page_info['button2_text'],
+                            "title": page_info['button2_text'][:20],
                             "payload": f"TEXT:{page_info['button2_link']}"
                         })
                     
@@ -313,7 +416,7 @@ def webhook():
                         buttons.append({
                             "type": "web_url",
                             "url": f"tel:{page_info['admin_phone']}",
-                            "title": page_info['button3_text']
+                            "title": page_info['button3_text'][:20]
                         })
                     
                     # Welcome text
@@ -345,14 +448,14 @@ def webhook():
                         if page_info.get('button1_text'):
                             buttons.append({
                                 "type": "postback",
-                                "title": page_info['button1_text'],
+                                "title": page_info['button1_text'][:20],
                                 "payload": "APPOINTMENT"
                             })
                         
                         if page_info.get('button2_text') and page_info.get('button2_link'):
                             buttons.append({
                                 "type": "postback",
-                                "title": page_info['button2_text'],
+                                "title": page_info['button2_text'][:20],
                                 "payload": f"TEXT:{page_info['button2_link']}"
                             })
                         
@@ -360,7 +463,7 @@ def webhook():
                             buttons.append({
                                 "type": "web_url",
                                 "url": f"tel:{page_info['admin_phone']}",
-                                "title": page_info['button3_text']
+                                "title": page_info['button3_text'][:20]
                             })
                         
                         welcome_text = page_info.get('welcome_text', 'A SmileScale AI rendszere aktív ezen az oldalon! 🦷')
