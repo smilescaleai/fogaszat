@@ -375,12 +375,12 @@ def webhook():
                         send_text_message(sender_id, response_text, access_token)
                         continue
                     
-                    # MÁSODIK: Ellenőrizzük, hogy admin-e a felhasználó
-                    if page_id in admin_users and sender_id in admin_users[page_id]:
-                        print(f"👑 Admin felhasználó üzenete!")
-                        response_text = f"👑 Admin mód aktív: {message_text}"
-                        send_text_message(sender_id, response_text, access_token)
-                        continue
+                    # MÁSODIK: Ellenőrizzük, hogy admin-e a felhasználó (DE NE KÜLDJÜNK NEKI SEMMIT!)
+                    is_admin = page_id in admin_users and sender_id in admin_users[page_id]
+                    if is_admin:
+                        print(f"👑 Admin felhasználó üzenete - nem küldünk választ, csak logoljuk")
+                        # NEM küldünk választ az adminnak, csak logoljuk
+                        # continue - NEM használjuk, hadd menjen tovább a normál folyamat
                     
                     # HARMADIK: Ellenőrizzük, hogy van-e aktív állapot (időpontfoglalás folyamatban)
                     if sender_id in user_states:
@@ -426,7 +426,8 @@ def webhook():
                         
                         continue
                     
-                    # Normál felhasználó - mindig küldjük a welcome template-et
+                    # NEGYEDIK: Normál felhasználó - mindig küldjük a welcome template-et
+                    # (Admin is megkapja, hogy tudja tesztelni)
                     print(f"👤 Normál felhasználó üzenete - Generic Template küldése...")
                     
                     # Gombok összeállítása a CSV adatokból
