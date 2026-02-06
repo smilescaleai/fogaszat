@@ -19,6 +19,9 @@ user_states = {}
 # Get Started gomb beállítva (page_id szerint)
 get_started_setup = set()
 
+# Első betöltés flag
+first_load = True
+
 # CSV URL a Google Sheets-ből
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRO13uEpQukHL1hTzxeZUjGYPaUPQ7XaKTjVWnbhlh2KnvOztWLASO6Jmu8782-4vx0Dco64xEVi2pO/pub?output=csv"
 
@@ -113,10 +116,12 @@ def setup_get_started_button(page_id, access_token):
         get_started_setup.add(page_id)
         return False
 
-def load_page_data():
+def load_page_data(setup_buttons=False):
     """
     Letölti és feldolgozza a CSV fájlt a Google Sheets-ből.
     Visszaad egy szótárat: {page_id: {"access_token": "...", "admin_password": "...", "admin_psid": "...", stb.}}
+    
+    setup_buttons: Ha True, beállítja a Get Started gombokat (csak első betöltésnél)
     """
     try:
         print("📥 CSV letöltése a Google Sheets-ből...")
@@ -163,8 +168,8 @@ def load_page_data():
                 button_count = len([b for b in [button1_text, button2_text, button3_text] if b])
                 print(f"✅ Oldal betöltve: {page_id} (gombok: {button_count}, admin: {'✓' if admin_psid else '✗'})")
                 
-                # Get Started gomb beállítása (csak ha még nincs a set-ben)
-                if page_id not in get_started_setup:
+                # Get Started gomb beállítása (csak ha setup_buttons=True)
+                if setup_buttons and page_id not in get_started_setup:
                     setup_get_started_button(page_id, access_token)
                 
                 # Admin betöltése memóriába
@@ -282,8 +287,10 @@ def webhook():
     data = request.get_json()
     print(f"📨 Webhook esemény érkezett: {data}")
     
-    # CSV adatok betöltése minden kérésnél
-    page_data = load_page_data()
+    # CSV adatok betöltése minden kérésnél (Get Started gomb beállítás nélkül)
+    global first_load
+    page_data = load_page_data(setup_buttons=first_load)
+    first_load = False  # Csak első alkalommal állítsa be a gombokat
     
     if not page_data:
         print("❌ Nem sikerült betölteni az oldal adatokat!")
