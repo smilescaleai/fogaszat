@@ -22,6 +22,9 @@ get_started_setup = set()
 # Szerver indulás flag
 server_started = False
 
+# Cached page data (egyszer betöltve)
+cached_page_data = {}
+
 # CSV URL a Google Sheets-ből
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRO13uEpQukHL1hTzxeZUjGYPaUPQ7XaKTjVWnbhlh2KnvOztWLASO6Jmu8782-4vx0Dco64xEVi2pO/pub?output=csv"
 
@@ -207,6 +210,24 @@ def send_generic_template(recipient_id, welcome_text, buttons, access_token):
         "Content-Type": "application/json"
     }
     
+    # Gombok validálása és tisztítása
+    validated_buttons = []
+    for btn in buttons[:3]:  # Max 3 gomb
+        if btn.get('type') == 'postback':
+            validated_buttons.append({
+                "type": "postback",
+                "title": btn['title'][:20],  # Max 20 karakter
+                "payload": btn['payload']
+            })
+        elif btn.get('type') == 'web_url':
+            # URL validáció
+            if btn.get('url') and btn['url'].strip():
+                validated_buttons.append({
+                    "type": "web_url",
+                    "url": btn['url'],
+                    "title": btn['title'][:20]  # Max 20 karakter
+                })
+    
     # Generic Template struktúra
     payload = {
         "recipient": {"id": recipient_id},
@@ -218,8 +239,8 @@ def send_generic_template(recipient_id, welcome_text, buttons, access_token):
                     "elements": [
                         {
                             "title": welcome_text[:80],  # Max 80 karakter
-                            "subtitle": " ",  # Kötelező mező (legalább 1 szóköz)
-                            "buttons": buttons[:3]  # Max 3 gomb
+                            "subtitle": "Válasszon az alábbiak közül:",  # Kötelező, nem lehet üres
+                            "buttons": validated_buttons
                         }
                     ]
                 }
@@ -230,7 +251,9 @@ def send_generic_template(recipient_id, welcome_text, buttons, access_token):
     
     try:
         print(f"📤 Generic Template küldése gombokkal (PSID: {recipient_id})...")
-        print(f"🎯 Gombok száma: {len(buttons)}")
+        print(f"🎯 Gombok száma: {len(validated_buttons)}")
+        print(f"📦 Payload JSON: {json.dumps(payload, indent=2, ensure_ascii=False)}")
+        
         response = requests.post(url, json=payload, headers=headers, timeout=10)
         response.raise_for_status()
         print(f"✅ Template sikeresen elküldve!")
@@ -256,7 +279,7 @@ def webhook():
     """
     Facebook Webhook - GET: hitelesítés, POST: üzenetkezelés.
     """
-    global server_started
+    global server_started, cached_page_data
     
     # GET kérés - Facebook hitelesítés
     if request.method == 'GET':
@@ -277,8 +300,12 @@ def webhook():
     data = request.get_json()
     print(f"📨 Webhook esemény érkezett: {data}")
     
-    # CSV adatok betöltése minden kérésnél
-    page_data = load_page_data()
+    # CSV adatok betöltése (csak egyszer, cache-elve)
+    if not cached_page_data:
+        print("🔄 Első betöltés - CSV cache-elése...")
+        cached_page_data = load_page_data()
+    
+    page_data = cached_page_data
     
     # Get Started gomb beállítása (csak első POST kérésnél)
     if not server_started:
@@ -412,7 +439,7 @@ def webhook():
                         })
                     
                     # 3. gomb - Sürgős eset (web_url - tárcsázás)
-                    if page_info.get('button3_text') and page_info.get('admin_phone'):
+                    if page_info.get('button3_text') and page_info.get('admin_phone') and page_info['admin_phone'].strip():
                         buttons.append({
                             "type": "web_url",
                             "url": f"tel:{page_info['admin_phone']}",
@@ -459,7 +486,7 @@ def webhook():
                                 "payload": f"TEXT:{page_info['button2_link']}"
                             })
                         
-                        if page_info.get('button3_text') and page_info.get('admin_phone'):
+                        if page_info.get('button3_text') and page_info.get('admin_phone') and page_info['admin_phone'].strip():
                             buttons.append({
                                 "type": "web_url",
                                 "url": f"tel:{page_info['admin_phone']}",
