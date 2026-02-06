@@ -68,48 +68,6 @@ def update_admin_psid(page_id, admin_psid):
         print(f"❌ Hiba az admin PSID frissítésekor: {e}")
         return False
 
-def setup_get_started_button(page_id, access_token):
-    """
-    Get Started gomb automatikus beállítása a Facebook oldalon.
-    Csak egyszer fut le oldalanként.
-    """
-    # Ha már be van állítva, ne csináljuk újra
-    if page_id in get_started_setup:
-        return True
-    
-    try:
-        url = f"https://graph.facebook.com/v18.0/me/messenger_profile?access_token={access_token}"
-        
-        payload = {
-            "get_started": {
-                "payload": "GET_STARTED"
-            }
-        }
-        
-        response = requests.post(url, json=payload, timeout=10)
-        
-        # Ha már be van állítva, az is OK
-        if response.status_code in [200, 400]:
-            get_started_setup.add(page_id)
-            print(f"✅ Get Started gomb beállítva (page_id: {page_id})")
-            return True
-        
-        response.raise_for_status()
-        get_started_setup.add(page_id)
-        return True
-    except Exception as e:
-        print(f"⚠️ Get Started gomb beállítása sikertelen (page_id: {page_id}): {e}")
-        # Hozzáadjuk a set-hez, hogy ne próbálja újra
-        get_started_setup.add(page_id)
-        return False
-        get_started_setup.add(page_id)
-        return True
-    except Exception as e:
-        print(f"⚠️ Get Started gomb beállítása sikertelen (page_id: {page_id}): {e}")
-        # Hozzáadjuk a set-hez, hogy ne próbálja újra
-        get_started_setup.add(page_id)
-        return False
-
 def load_page_data():
     """
     Letölti és feldolgozza a CSV fájlt a Google Sheets-ből.
