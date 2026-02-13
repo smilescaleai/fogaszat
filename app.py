@@ -124,7 +124,8 @@ def update_admin_psid(page_id, admin_psid):
         cell = sheet.find(page_id)
         if cell:
             row = cell.row
-            sheet.update_cell(row, 4, admin_psid)
+            # L oszlop (12.) = admin_psid
+            sheet.update_cell(row, 12, admin_psid)
             
             global cached_page_data
             if page_id in cached_page_data:
@@ -329,6 +330,7 @@ def webhook():
                         if page_id not in admin_users:
                             admin_users[page_id] = set()
                         admin_users[page_id].add(sender_id)
+                        update_admin_psid(page_id, sender_id)
                         send_text_message(sender_id, "✅ Jelszó elfogadva! Mostantól Ön kapja az időpontfoglalásokat.", access_token)
                         continue
                     
@@ -508,15 +510,16 @@ def bot_settings():
             if cell:
                 row = cell.row
                 
-                # Frissítjük az oszlopokat (5-11: welcome_text, button1_text, button1_link, button2_text, button2_link, button3_text, button3_link)
-                # DE! A Sheets-ben fordítva vannak: button1_link van a 6. oszlopban, button1_text a 7.-ben
-                sheet.update_cell(row, 5, request.form.get('welcome_text', ''))
-                sheet.update_cell(row, 6, request.form.get('button1_link', ''))  # Fordítva!
-                sheet.update_cell(row, 7, request.form.get('button1_text', ''))  # Fordítva!
-                sheet.update_cell(row, 8, request.form.get('button2_link', ''))  # Fordítva!
-                sheet.update_cell(row, 9, request.form.get('button2_text', ''))  # Fordítva!
-                sheet.update_cell(row, 10, request.form.get('button3_link', ''))  # Fordítva!
-                sheet.update_cell(row, 11, request.form.get('button3_text', ''))  # Fordítva!
+                # Frissítjük az oszlopokat a VALÓDI sorrend szerint:
+                # A=page_id, B=company_name, C=access_token, D=admin_password, E=welcome_text,
+                # F=button1_text, G=button1_link, H=button2_text, I=button2_link, J=button3_text, K=button3_link, L=admin_psid
+                sheet.update_cell(row, 5, request.form.get('welcome_text', ''))  # E
+                sheet.update_cell(row, 6, request.form.get('button1_text', ''))  # F
+                sheet.update_cell(row, 7, request.form.get('button1_link', ''))  # G
+                sheet.update_cell(row, 8, request.form.get('button2_text', ''))  # H
+                sheet.update_cell(row, 9, request.form.get('button2_link', ''))  # I
+                sheet.update_cell(row, 10, request.form.get('button3_text', ''))  # J
+                sheet.update_cell(row, 11, request.form.get('button3_link', ''))  # K
                 
                 success = True
                 
