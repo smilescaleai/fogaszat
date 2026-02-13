@@ -509,13 +509,14 @@ def bot_settings():
                 row = cell.row
                 
                 # Frissítjük az oszlopokat (5-11: welcome_text, button1_text, button1_link, button2_text, button2_link, button3_text, button3_link)
+                # DE! A Sheets-ben fordítva vannak: button1_link van a 6. oszlopban, button1_text a 7.-ben
                 sheet.update_cell(row, 5, request.form.get('welcome_text', ''))
-                sheet.update_cell(row, 6, request.form.get('button1_text', ''))
-                sheet.update_cell(row, 7, request.form.get('button1_link', ''))
-                sheet.update_cell(row, 8, request.form.get('button2_text', ''))
-                sheet.update_cell(row, 9, request.form.get('button2_link', ''))
-                sheet.update_cell(row, 10, request.form.get('button3_text', ''))
-                sheet.update_cell(row, 11, request.form.get('button3_link', ''))
+                sheet.update_cell(row, 6, request.form.get('button1_link', ''))  # Fordítva!
+                sheet.update_cell(row, 7, request.form.get('button1_text', ''))  # Fordítva!
+                sheet.update_cell(row, 8, request.form.get('button2_link', ''))  # Fordítva!
+                sheet.update_cell(row, 9, request.form.get('button2_text', ''))  # Fordítva!
+                sheet.update_cell(row, 10, request.form.get('button3_link', ''))  # Fordítva!
+                sheet.update_cell(row, 11, request.form.get('button3_text', ''))  # Fordítva!
                 
                 success = True
                 
