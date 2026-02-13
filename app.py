@@ -354,7 +354,7 @@ def webhook():
                         elif state == 'waiting_service':
                             user_states[sender_id]['notes'] = message_text
                             
-                            # Lead mentése (egyelőre csak log)
+                            # Lead mentése
                             user_data = {
                                 'name': user_states[sender_id]['name'],
                                 'phone': user_states[sender_id]['phone'],
@@ -363,6 +363,9 @@ def webhook():
                             }
                             
                             print(f"📋 ÚJ LEAD: {user_data['name']} | {user_data['phone']} | {user_data['notes']}")
+                            
+                            # MENTÉS A SHEETS-BE
+                            save_lead(page_id, page_info, user_data)
                             
                             confirmation = page_info.get('button1_link', 'Köszönjük! Hamarosan felvesszük Önnel a kapcsolatot!')
                             send_text_message(sender_id, confirmation, access_token)
