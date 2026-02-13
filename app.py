@@ -285,9 +285,10 @@ def webhook():
     
     data = request.get_json()
     
-    # Config CSV frissítés
-    print("🔄 Config CSV frissítése...")
-    cached_page_data = load_page_data()
+    # Config CSV frissítés (csak ha még nincs betöltve)
+    if not cached_page_data:
+        print("🔄 Config CSV első betöltése...")
+        cached_page_data = load_page_data()
     
     if not cached_page_data:
         return jsonify({"status": "error"}), 500
