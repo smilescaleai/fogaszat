@@ -61,40 +61,61 @@ def generate_lead_id():
     return f"LEAD-{timestamp}"
 
 def save_lead(page_id, page_info, user_data):
-    """Lead mentése a Leads Google Sheets táblába"""
+    """Lead mentése Google Form-on keresztül (automatikus Sheets írás)"""
     try:
-        print(f"💾 Lead mentés: {user_data.get('name')}")
-        
-        client = get_sheets_client()
-        if not client:
-            print("❌ Google Sheets kliens hiba!")
-            return False
-        
-        sheet = client.open_by_key(LEADS_SPREADSHEET_ID).sheet1
-        
         lead_id = generate_lead_id()
         timestamp = datetime.now().strftime("%Y.%m.%d %H:%M:%S")
         
-        # 9 oszlop
-        row = [
-            lead_id,
-            timestamp,
-            page_id,
-            page_info.get('company_name', ''),
-            user_data.get('name', ''),
-            user_data.get('phone', ''),
-            user_data.get('psid', ''),
-            '',  # veglegesitett_idopont
-            user_data.get('notes', '')
-        ]
+        # Google Form URL (később beállítod)
+        form_url = os.environ.get('GOOGLE_FORM_URL', '')
         
-        sheet.append_row(row)
-        print(f"✅ Lead mentve: {lead_id}")
+        if form_url:
+            # Form submission
+            form_data = {
+                'entry.1': lead_id,
+                'entry.2': timestamp,
+                'entry.3': page_id,
+                'entry.4': page_info.get('company_name', ''),
+                'entry.5': user_data.get('name', ''),
+                'entry.6': user_data.get('phone', ''),
+                'entry.7': user_data.get('psid', ''),
+                'entry.8': '',  # veglegesitett_idopont
+                'entry.9': user_data.get('notes', '')
+            }
+            
+            try:
+                response = requests.post(form_url, data=form_data, timeout=5)
+                print(f"✅ Lead mentve Form-on keresztül: {lead_id}")
+                return True
+            except Exception as e:
+                print(f"⚠️ Form hiba: {e}")
+        
+        # Fallback: Sheets API
+        client = get_sheets_client()
+        if client:
+            sheet = client.open_by_key(LEADS_SPREADSHEET_ID).sheet1
+            
+            row = [
+                lead_id,
+                timestamp,
+                page_id,
+                page_info.get('company_name', ''),
+                user_data.get('name', ''),
+                user_data.get('phone', ''),
+                user_data.get('psid', ''),
+                '',
+                user_data.get('notes', '')
+            ]
+            
+            sheet.append_row(row)
+            print(f"✅ Lead mentve Sheets API-val: {lead_id}")
+            return True
+        
+        print(f"⚠️ Lead csak logban: {lead_id} - {user_data.get('name')}")
         return True
+        
     except Exception as e:
         print(f"❌ Lead mentési hiba: {e}")
-        import traceback
-        traceback.print_exc()
         return False
 
 def update_admin_psid(page_id, admin_psid):
@@ -277,9 +298,8 @@ def webhook():
     
     data = request.get_json()
     
-    # Config CSV frissítés (csak ha még nincs betöltve)
+    # Config CSV betöltés (cache, csak egyszer)
     if not cached_page_data:
-        print("🔄 Config CSV első betöltése...")
         cached_page_data = load_page_data()
     
     if not cached_page_data:
@@ -314,7 +334,6 @@ def webhook():
                         if page_id not in admin_users:
                             admin_users[page_id] = set()
                         admin_users[page_id].add(sender_id)
-                        update_admin_psid(page_id, sender_id)
                         send_text_message(sender_id, "✅ Jelszó elfogadva! Mostantól Ön kapja az időpontfoglalásokat.", access_token)
                         continue
                     
@@ -335,7 +354,7 @@ def webhook():
                         elif state == 'waiting_service':
                             user_states[sender_id]['notes'] = message_text
                             
-                            # Lead mentése
+                            # Lead mentése (egyelőre csak log)
                             user_data = {
                                 'name': user_states[sender_id]['name'],
                                 'phone': user_states[sender_id]['phone'],
@@ -343,7 +362,7 @@ def webhook():
                                 'psid': sender_id
                             }
                             
-                            save_lead(page_id, page_info, user_data)
+                            print(f"📋 ÚJ LEAD: {user_data['name']} | {user_data['phone']} | {user_data['notes']}")
                             
                             confirmation = page_info.get('button1_link', 'Köszönjük! Hamarosan felvesszük Önnel a kapcsolatot!')
                             send_text_message(sender_id, confirmation, access_token)
