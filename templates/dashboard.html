@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🦷 {{ page_info.company_name }} - Dashboard</title>
-    <meta http-equiv="refresh" content="5">
+    <title>🦷 Bot Testreszabás - {{ page_info.company_name }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; }
@@ -13,29 +12,20 @@
         .navbar-menu { display: flex; gap: 20px; align-items: center; }
         .navbar-menu a { color: white; text-decoration: none; padding: 8px 16px; border-radius: 6px; transition: background 0.3s; }
         .navbar-menu a:hover { background: rgba(255,255,255,0.2); }
-        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
-        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .stat-card .number { font-size: 36px; font-weight: 700; color: #667eea; margin-bottom: 8px; }
-        .stat-card .label { color: #6b7280; font-size: 14px; }
-        .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .card h2 { margin-bottom: 20px; color: #1f2937; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #f9fafb; padding: 12px; text-align: left; font-weight: 600; color: #374151; border-bottom: 2px solid #e5e7eb; }
-        td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
-        tr:hover { background: #f9fafb; }
-        .badge { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
-        .badge-success { background: #d1fae5; color: #065f46; }
-        .badge-warning { background: #fef3c7; color: #92400e; }
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-        .modal-content { background: white; margin: 10% auto; padding: 32px; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
-        .close { color: #9ca3af; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
-        .close:hover { color: #374151; }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; margin-bottom: 8px; color: #374151; font-weight: 600; }
-        .form-group input { width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; }
-        .btn { padding: 14px 28px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .container { max-width: 900px; margin: 0 auto; padding: 24px; }
+        .card { background: white; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; }
+        .card h2 { margin-bottom: 24px; color: #1f2937; }
+        .form-group { margin-bottom: 24px; }
+        label { display: block; margin-bottom: 8px; color: #374151; font-weight: 600; }
+        input, textarea { width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; font-family: inherit; }
+        input:focus, textarea:focus { outline: none; border-color: #667eea; }
+        textarea { min-height: 100px; resize: vertical; }
+        .btn { padding: 14px 28px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.2s; }
         .btn:hover { transform: translateY(-2px); }
+        .info-box { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 4px; margin-bottom: 24px; color: #1e40af; }
+        .success-box { background: #d1fae5; border-left: 4px solid #10b981; padding: 16px; border-radius: 4px; margin-bottom: 24px; color: #065f46; }
+        .button-group { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .warning-box { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 4px; margin-top: 24px; color: #92400e; }
     </style>
 </head>
 <body>
@@ -52,131 +42,59 @@
     </nav>
     
     <div class="container">
-        <div class="stats">
-            <div class="stat-card">
-                <div class="number">{{ leads|length }}</div>
-                <div class="label">Összes lead</div>
-            </div>
-            <div class="stat-card">
-                <div class="number">{{ leads|selectattr('veglegesitett_idopont', 'equalto', '')|list|length }}</div>
-                <div class="label">Időpont nélkül</div>
-            </div>
-            <div class="stat-card">
-                <div class="number">{{ leads|rejectattr('veglegesitett_idopont', 'equalto', '')|list|length }}</div>
-                <div class="label">Időpont beállítva</div>
-            </div>
-            <div class="stat-card">
-                <div class="number">{{ leads|selectattr('beerkezett', 'string')|list|length }}</div>
-                <div class="label">Ma érkezett</div>
-            </div>
-        </div>
-        
         <div class="card">
-            <h2>📋 Időpontfoglalások</h2>
-            {% if leads %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Beérkezett</th>
-                        <th>Név</th>
-                        <th>Telefon</th>
-                        <th>Véglegesített időpont</th>
-                        <th>Megjegyzés</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for lead in leads|reverse %}
-                    <tr onclick="openModal('{{ lead.lead_id }}', '{{ lead.name }}', '{{ lead.veglegesitett_idopont }}')" style="cursor: pointer;">
-                        <td>{{ lead['beerkezett '] or lead.beerkezett or '' }}</td>
-                        <td><strong>{{ lead.name }}</strong></td>
-                        <td>{{ lead.phone }}</td>
-                        <td>
-                            {% if lead.veglegesitett_idopont %}
-                            <span class="badge badge-success">{{ lead.veglegesitett_idopont }}</span>
-                            {% else %}
-                            <span class="badge badge-warning">Nincs időpont</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ lead.megjegyzes }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <p style="text-align: center; padding: 40px; color: #9ca3af;">Még nincs időpontfoglalás</p>
+            <h2>⚙️ Messenger Bot Testreszabás</h2>
+            
+            {% if success %}
+            <div class="success-box">
+                <strong>✅ Siker!</strong> A bot beállítások mentve. A változások 1-2 percen belül érvénybe lépnek.
+            </div>
             {% endif %}
-        </div>
-    </div>
-    
-    <!-- Modal -->
-    <div id="modal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <h2>📅 Időpont beállítása</h2>
-            <p><strong id="modal-name"></strong></p>
-            <form id="update-form" onsubmit="updateLead(event)">
-                <input type="hidden" id="lead-id" name="lead_id">
+            
+            <form method="POST">
                 <div class="form-group">
-                    <label>Véglegesített időpont:</label>
-                    <input type="datetime-local" id="idopont" name="idopont" required>
+                    <label>🎉 Üdvözlő szöveg</label>
+                    <textarea name="welcome_text" required>{{ page_info.welcome_text }}</textarea>
                 </div>
+                
+                <h3 style="margin: 32px 0 16px 0; color: #374151;">Gombok</h3>
+                
+                <div class="button-group">
+                    <div class="form-group">
+                        <label>1️⃣ Gomb szövege</label>
+                        <input type="text" name="button1_text" value="{{ page_info.button1_text }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Válasz szöveg</label>
+                        <input type="text" name="button1_link" value="{{ page_info.button1_link }}">
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <div class="form-group">
+                        <label>2️⃣ Gomb szövege</label>
+                        <input type="text" name="button2_text" value="{{ page_info.button2_text }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Válasz szöveg</label>
+                        <textarea name="button2_link">{{ page_info.button2_link }}</textarea>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <div class="form-group">
+                        <label>3️⃣ Gomb szövege</label>
+                        <input type="text" name="button3_text" value="{{ page_info.button3_text }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Válasz szöveg</label>
+                        <textarea name="button3_link">{{ page_info.button3_link }}</textarea>
+                    </div>
+                </div>
+                
                 <button type="submit" class="btn">💾 Mentés</button>
             </form>
         </div>
     </div>
-    
-    <script>
-        function openModal(leadId, name, currentIdopont) {
-            document.getElementById('modal').style.display = 'block';
-            document.getElementById('lead-id').value = leadId;
-            document.getElementById('modal-name').textContent = name;
-            
-            if (currentIdopont) {
-                // Convert "2026.02.13 18:30" to "2026-02-13T18:30"
-                const parts = currentIdopont.split(' ');
-                if (parts.length === 2) {
-                    const date = parts[0].replace(/\./g, '-');
-                    document.getElementById('idopont').value = date + 'T' + parts[1];
-                }
-            }
-        }
-        
-        function closeModal() {
-            document.getElementById('modal').style.display = 'none';
-        }
-        
-        function updateLead(event) {
-            event.preventDefault();
-            
-            const formData = new FormData(event.target);
-            const idopont = formData.get('idopont');
-            
-            // Convert "2026-02-13T18:30" to "2026.02.13 18:30"
-            const formatted = idopont.replace('T', ' ').replace(/-/g, '.');
-            formData.set('idopont', formatted);
-            
-            fetch('/update-lead', {
-                method: 'POST',
-                body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    closeModal();
-                    location.reload();
-                } else {
-                    alert('Hiba: ' + data.error);
-                }
-            })
-            .catch(err => alert('Hiba: ' + err));
-        }
-        
-        window.onclick = function(event) {
-            const modal = document.getElementById('modal');
-            if (event.target == modal) {
-                closeModal();
-            }
-        }
-    </script>
 </body>
 </html>
