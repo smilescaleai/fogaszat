@@ -173,11 +173,10 @@ def load_page_data():
         page_data = {}
         for row in reader:
             page_id = str(row.get('page_id', '')).strip()
+            company_name = str(row.get('company_name', '')).strip()
             access_token = str(row.get('access_token', '')).strip()
             admin_password = str(row.get('admin_password', '')).strip()
-            admin_psid = str(row.get('admin_psid', '')).strip()
             welcome_text = str(row.get('welcome_text', '')).strip()
-            company_name = str(row.get('company_name', '')).strip()
             
             button1_text = str(row.get('button1_text', '')).strip()
             button1_link = str(row.get('button1_link', '')).strip()
@@ -185,6 +184,7 @@ def load_page_data():
             button2_link = str(row.get('button2_link', '')).strip()
             button3_text = str(row.get('button3_text', '')).strip()
             button3_link = str(row.get('button3_link', '')).strip()
+            admin_psid = str(row.get('admin_psid', '')).strip()
             
             if page_id and access_token:
                 page_data[page_id] = {
