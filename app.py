@@ -475,7 +475,7 @@ def dashboard():
     
     return render_template('dashboard.html', page_info=page_data[page_id], leads=leads, page_id=page_id)
 
-@app.route('/bot-settings')
+@app.route('/bot-settings', methods=['GET', 'POST'])
 def bot_settings():
     if 'page_id' not in session:
         return redirect(url_for('login'))
@@ -486,7 +486,85 @@ def bot_settings():
     if page_id not in page_data:
         return redirect(url_for('login'))
     
-    return render_template('bot_settings.html', page_info=page_data[page_id], page_id=page_id)
+    success = False
+    
+    if request.method == 'POST':
+        # Bot beállítások mentése a Config Sheets-be
+        try:
+            creds_dict = json.loads(GOOGLE_CREDENTIALS)
+            creds = Credentials.from_service_account_info(
+                creds_dict,
+                scopes=[
+                    'https://www.googleapis.com/auth/spreadsheets',
+                    'https://www.googleapis.com/auth/drive',
+                    'https://www.googleapis.com/auth/drive.file'
+                ]
+            )
+            client = gspread.authorize(creds)
+            sheet = client.open_by_key(SPREADSHEET_ID).sheet1
+            
+            # Keressük meg a page_id sorát
+            cell = sheet.find(page_id)
+            if cell:
+                row = cell.row
+                
+                # Frissítjük az oszlopokat (5-11: welcome_text, button1_text, button1_link, button2_text, button2_link, button3_text, button3_link)
+                sheet.update_cell(row, 5, request.form.get('welcome_text', ''))
+                sheet.update_cell(row, 6, request.form.get('button1_text', ''))
+                sheet.update_cell(row, 7, request.form.get('button1_link', ''))
+                sheet.update_cell(row, 8, request.form.get('button2_text', ''))
+                sheet.update_cell(row, 9, request.form.get('button2_link', ''))
+                sheet.update_cell(row, 10, request.form.get('button3_text', ''))
+                sheet.update_cell(row, 11, request.form.get('button3_link', ''))
+                
+                success = True
+                
+                # Cache frissítés
+                global cached_page_data
+                cached_page_data = {}
+                
+        except Exception as e:
+            print(f"❌ Bot beállítások mentési hiba: {e}")
+    
+    # Friss adatok betöltése
+    page_data = load_page_data()
+    
+    return render_template('bot_settings.html', page_info=page_data[page_id], page_id=page_id, success=success)
+
+@app.route('/update-lead', methods=['POST'])
+def update_lead():
+    if 'page_id' not in session:
+        return jsonify({"success": False, "error": "Not logged in"}), 401
+    
+    try:
+        lead_id = request.form.get('lead_id')
+        idopont = request.form.get('idopont')
+        
+        creds_dict = json.loads(GOOGLE_CREDENTIALS)
+        creds = Credentials.from_service_account_info(
+            creds_dict,
+            scopes=[
+                'https://www.googleapis.com/auth/spreadsheets',
+                'https://www.googleapis.com/auth/drive',
+                'https://www.googleapis.com/auth/drive.file'
+            ]
+        )
+        client = gspread.authorize(creds)
+        sheet = client.open_by_key(LEADS_SPREADSHEET_ID).sheet1
+        
+        # Keressük meg a lead_id sorát
+        cell = sheet.find(lead_id)
+        if cell:
+            row = cell.row
+            # 8. oszlop: veglegesitett_idopont
+            sheet.update_cell(row, 8, idopont)
+            return jsonify({"success": True})
+        
+        return jsonify({"success": False, "error": "Lead not found"}), 404
+        
+    except Exception as e:
+        print(f"❌ Lead frissítési hiba: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/logout')
 def logout():
