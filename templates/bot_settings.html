@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🦷 Bot Testreszabás - {{ page_info.company_name }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; }
+        .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .navbar-brand { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .navbar-menu { display: flex; gap: 20px; align-items: center; }
+        .navbar-menu a { color: white; text-decoration: none; padding: 8px 16px; border-radius: 6px; transition: background 0.3s; }
+        .navbar-menu a:hover { background: rgba(255,255,255,0.2); }
+        .container { max-width: 900px; margin: 0 auto; padding: 24px; }
+        .card { background: white; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; }
+        .card h2 { margin-bottom: 24px; color: #1f2937; }
+        .form-group { margin-bottom: 24px; }
+        label { display: block; margin-bottom: 8px; color: #374151; font-weight: 600; }
+        input, textarea { width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; font-family: inherit; }
+        input:focus, textarea:focus { outline: none; border-color: #667eea; }
+        textarea { min-height: 100px; resize: vertical; }
+        .btn { padding: 14px 28px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.2s; }
+        .btn:hover { transform: translateY(-2px); }
+        .info-box { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 4px; margin-bottom: 24px; color: #1e40af; }
+        .button-group { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .warning-box { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 4px; margin-top: 24px; color: #92400e; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <span>🦷</span>
+            <span>{{ page_info.company_name }}</span>
+        </div>
+        <div class="navbar-menu">
+            <a href="/dashboard">📊 Leadek</a>
+            <a href="/bot-settings">⚙️ Bot Testreszabás</a>
+            <a href="/logout">🚪 Kilépés</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="card">
+            <h2>⚙️ Messenger Bot Testreszabás</h2>
+            
+            <div class="info-box">
+                <strong>ℹ️ Fontos:</strong> A módosítások a Google Sheets táblában történnek. Itt csak megtekintheted a jelenlegi beállításokat.
+            </div>
+            
+            <div class="form-group">
+                <label>🎉 Üdvözlő szöveg</label>
+                <textarea readonly>{{ page_info.welcome_text }}</textarea>
+            </div>
+            
+            <h3 style="margin: 32px 0 16px 0; color: #374151;">Gombok</h3>
+            
+            <div class="button-group">
+                <div class="form-group">
+                    <label>1️⃣ Gomb szövege</label>
+                    <input type="text" readonly value="{{ page_info.button1_text }}">
+                </div>
+                <div class="form-group">
+                    <label>Válasz szöveg</label>
+                    <input type="text" readonly value="{{ page_info.button1_link }}">
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <div class="form-group">
+                    <label>2️⃣ Gomb szövege</label>
+                    <input type="text" readonly value="{{ page_info.button2_text }}">
+                </div>
+                <div class="form-group">
+                    <label>Válasz szöveg</label>
+                    <textarea readonly>{{ page_info.button2_link }}</textarea>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <div class="form-group">
+                    <label>3️⃣ Gomb szövege</label>
+                    <input type="text" readonly value="{{ page_info.button3_text }}">
+                </div>
+                <div class="form-group">
+                    <label>Válasz szöveg</label>
+                    <textarea readonly>{{ page_info.button3_link }}</textarea>
+                </div>
+            </div>
+            
+            <div class="warning-box">
+                <strong>📝 Szerkesztés:</strong> A bot beállításainak módosításához nyisd meg a Google Sheets táblát és szerkeszd az adatokat ott. A változások automatikusan érvénybe lépnek.
+            </div>
+        </div>
+    </div>
+</body>
+</html>
