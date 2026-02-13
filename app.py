@@ -26,9 +26,8 @@ server_started = False
 # Cached page data (egyszer betöltve)
 cached_page_data = {}
 
-# CSV URL-ek a Google Sheets-ből
+# CSV URL a Google Sheets-ből (csak Config-hoz)
 CONFIG_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRO13uEpQukHL1hTzxeZUjGYPaUPQ7XaKTjVWnbhlh2KnvOztWLASO6Jmu8782-4vx0Dco64xEVi2pO/pub?output=csv"
-LEADS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSX4G6fWjzosvSlrgi3P93tKWRpwJFUsGUE6DadAIVtHiGy3W8Tbo3mwMj0S5JxOJ2jxb3XsnKkMuz2/pub?output=csv"
 
 # Verify token
 VERIFY_TOKEN = "smilescale_token_2026"
@@ -442,21 +441,36 @@ def dashboard():
     if page_id not in page_data:
         return redirect(url_for('login'))
     
-    # Leadek betöltése CSV-ből
+    # Leadek betöltése Sheets API-ból (biztonságos)
     try:
-        print("📥 Leads CSV letöltése...")
-        response = requests.get(LEADS_CSV_URL, timeout=10)
-        response.raise_for_status()
-        response.encoding = 'utf-8'
+        print(f"📥 Leads betöltése Sheets API-ból... Page ID: {page_id}")
         
-        csv_content = StringIO(response.text)
-        reader = csv.DictReader(csv_content)
+        creds_dict = json.loads(GOOGLE_CREDENTIALS)
+        creds = Credentials.from_service_account_info(
+            creds_dict,
+            scopes=[
+                'https://www.googleapis.com/auth/spreadsheets',
+                'https://www.googleapis.com/auth/drive',
+                'https://www.googleapis.com/auth/drive.file'
+            ]
+        )
+        client = gspread.authorize(creds)
         
-        all_leads = list(reader)
-        leads = [l for l in all_leads if l.get('page_id') == page_id]
-        print(f"✅ Leads CSV betöltve! {len(leads)} lead ehhez az oldalhoz.")
+        sheet = client.open_by_key(LEADS_SPREADSHEET_ID).sheet1
+        all_leads = sheet.get_all_records()
+        
+        print(f"🔍 Összes lead: {len(all_leads)}")
+        print(f"🔍 Első lead page_id: {all_leads[0].get('page_id') if all_leads else 'NINCS'}")
+        print(f"🔍 Keresett page_id: {page_id}")
+        
+        leads = [l for l in all_leads if str(l.get('page_id')) == str(page_id)]
+        
+        print(f"✅ Leads betöltve! {len(leads)} lead ehhez az oldalhoz.")
+        print(f"🔍 Leadek: {leads}")
     except Exception as e:
-        print(f"❌ Leads CSV hiba: {e}")
+        print(f"❌ Leads betöltési hiba: {e}")
+        import traceback
+        traceback.print_exc()
         leads = []
     
     return render_template('dashboard.html', page_info=page_data[page_id], leads=leads, page_id=page_id)
