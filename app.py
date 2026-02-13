@@ -26,8 +26,9 @@ server_started = False
 # Cached page data (egyszer betöltve)
 cached_page_data = {}
 
-# CSV URL a Google Sheets-ből
-CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRO13uEpQukHL1hTzxeZUjGYPaUPQ7XaKTjVWnbhlh2KnvOztWLASO6Jmu8782-4vx0Dco64xEVi2pO/pub?output=csv"
+# CSV URL-ek a Google Sheets-ből
+CONFIG_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRO13uEpQukHL1hTzxeZUjGYPaUPQ7XaKTjVWnbhlh2KnvOztWLASO6Jmu8782-4vx0Dco64xEVi2pO/pub?output=csv"
+LEADS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSX4G6fWjzosvSlrgi3P93tKWRpwJFUsGUE6DadAIVtHiGy3W8Tbo3mwMj0S5JxOJ2jxb3XsnKkMuz2/pub?output=csv"
 
 # Verify token
 VERIFY_TOKEN = "smilescale_token_2026"
@@ -59,12 +60,21 @@ def generate_lead_id():
 def save_lead(page_id, page_info, user_data):
     """Lead mentése a Leads Google Sheets táblába"""
     try:
-        print(f"🔍 LEADS_SPREADSHEET_ID: {LEADS_SPREADSHEET_ID}")
+        print(f"💾 Lead mentés indítása...")
         
         client = get_sheets_client()
         if not client:
             print("❌ Google Sheets kliens hiba!")
             return False
+        
+        # Listázzuk az összes elérhető táblát
+        print("🔍 Elérhető táblák:")
+        try:
+            all_sheets = client.openall()
+            for s in all_sheets:
+                print(f"  - {s.title} (ID: {s.id})")
+        except Exception as e:
+            print(f"  ⚠️ Nem sikerült listázni: {e}")
         
         print(f"🔍 Tábla megnyitása: {LEADS_SPREADSHEET_ID}")
         sheet = client.open_by_key(LEADS_SPREADSHEET_ID).sheet1
@@ -72,7 +82,7 @@ def save_lead(page_id, page_info, user_data):
         lead_id = generate_lead_id()
         timestamp = datetime.now().strftime("%Y.%m.%d %H:%M:%S")
         
-        # 9 oszlop (service_type törölve)
+        # 9 oszlop
         row = [
             lead_id,
             timestamp,
@@ -141,10 +151,10 @@ def setup_get_started_button(page_id, access_token):
         return False
 
 def load_page_data():
-    """Letölti és feldolgozza a CSV fájlt a Google Sheets-ből."""
+    """Letölti és feldolgozza a Config CSV fájlt a Google Sheets-ből."""
     try:
-        print("📥 CSV letöltése...")
-        response = requests.get(CSV_URL, timeout=10)
+        print("📥 Config CSV letöltése...")
+        response = requests.get(CONFIG_CSV_URL, timeout=10)
         response.raise_for_status()
         response.encoding = 'utf-8'
         
@@ -187,10 +197,10 @@ def load_page_data():
                         admin_users[page_id] = set()
                     admin_users[page_id].add(admin_psid)
         
-        print(f"✅ CSV betöltve! {len(page_data)} oldal.")
+        print(f"✅ Config CSV betöltve! {len(page_data)} oldal.")
         return page_data
     except Exception as e:
-        print(f"❌ CSV hiba: {e}")
+        print(f"❌ Config CSV hiba: {e}")
         return {}
 
 def send_text_message(recipient_id, message_text, access_token):
@@ -275,8 +285,8 @@ def webhook():
     
     data = request.get_json()
     
-    # CSV frissítés
-    print("🔄 CSV frissítése...")
+    # Config CSV frissítés
+    print("🔄 Config CSV frissítése...")
     cached_page_data = load_page_data()
     
     if not cached_page_data:
@@ -421,13 +431,21 @@ def dashboard():
     if page_id not in page_data:
         return redirect(url_for('login'))
     
-    # Leadek betöltése
+    # Leadek betöltése CSV-ből
     try:
-        client = get_sheets_client()
-        sheet = client.open_by_key(LEADS_SPREADSHEET_ID).sheet1
-        all_leads = sheet.get_all_records()
+        print("📥 Leads CSV letöltése...")
+        response = requests.get(LEADS_CSV_URL, timeout=10)
+        response.raise_for_status()
+        response.encoding = 'utf-8'
+        
+        csv_content = StringIO(response.text)
+        reader = csv.DictReader(csv_content)
+        
+        all_leads = list(reader)
         leads = [l for l in all_leads if l.get('page_id') == page_id]
-    except:
+        print(f"✅ Leads CSV betöltve! {len(leads)} lead ehhez az oldalhoz.")
+    except Exception as e:
+        print(f"❌ Leads CSV hiba: {e}")
         leads = []
     
     return render_template('dashboard.html', page_info=page_data[page_id], leads=leads, page_id=page_id)
