@@ -59,10 +59,14 @@ def generate_lead_id():
 def save_lead(page_id, page_info, user_data):
     """Lead mentése a Leads Google Sheets táblába"""
     try:
+        print(f"🔍 LEADS_SPREADSHEET_ID: {LEADS_SPREADSHEET_ID}")
+        
         client = get_sheets_client()
         if not client:
+            print("❌ Google Sheets kliens hiba!")
             return False
         
+        print(f"🔍 Tábla megnyitása: {LEADS_SPREADSHEET_ID}")
         sheet = client.open_by_key(LEADS_SPREADSHEET_ID).sheet1
         
         lead_id = generate_lead_id()
@@ -81,11 +85,14 @@ def save_lead(page_id, page_info, user_data):
             user_data.get('notes', '')
         ]
         
+        print(f"🔍 Sor hozzáadása: {row}")
         sheet.append_row(row)
         print(f"✅ Lead mentve: {lead_id}")
         return True
     except Exception as e:
         print(f"❌ Lead mentési hiba: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 def update_admin_psid(page_id, admin_psid):
