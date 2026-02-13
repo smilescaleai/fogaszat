@@ -44,7 +44,10 @@ def get_sheets_client():
         creds_dict = json.loads(GOOGLE_CREDENTIALS)
         creds = Credentials.from_service_account_info(
             creds_dict,
-            scopes=['https://www.googleapis.com/auth/spreadsheets']
+            scopes=[
+                'https://www.googleapis.com/auth/spreadsheets',
+                'https://www.googleapis.com/auth/drive'
+            ]
         )
         client = gspread.authorize(creds)
         return client
@@ -60,23 +63,13 @@ def generate_lead_id():
 def save_lead(page_id, page_info, user_data):
     """Lead mentése a Leads Google Sheets táblába"""
     try:
-        print(f"💾 Lead mentés indítása...")
+        print(f"💾 Lead mentés: {user_data.get('name')}")
         
         client = get_sheets_client()
         if not client:
             print("❌ Google Sheets kliens hiba!")
             return False
         
-        # Listázzuk az összes elérhető táblát
-        print("🔍 Elérhető táblák:")
-        try:
-            all_sheets = client.openall()
-            for s in all_sheets:
-                print(f"  - {s.title} (ID: {s.id})")
-        except Exception as e:
-            print(f"  ⚠️ Nem sikerült listázni: {e}")
-        
-        print(f"🔍 Tábla megnyitása: {LEADS_SPREADSHEET_ID}")
         sheet = client.open_by_key(LEADS_SPREADSHEET_ID).sheet1
         
         lead_id = generate_lead_id()
@@ -95,7 +88,6 @@ def save_lead(page_id, page_info, user_data):
             user_data.get('notes', '')
         ]
         
-        print(f"🔍 Sor hozzáadása: {row}")
         sheet.append_row(row)
         print(f"✅ Lead mentve: {lead_id}")
         return True
