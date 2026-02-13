@@ -61,61 +61,57 @@ def generate_lead_id():
     return f"LEAD-{timestamp}"
 
 def save_lead(page_id, page_info, user_data):
-    """Lead mentése Google Form-on keresztül (automatikus Sheets írás)"""
+    """Lead mentése Google Sheets táblába"""
     try:
         lead_id = generate_lead_id()
         timestamp = datetime.now().strftime("%Y.%m.%d %H:%M:%S")
         
-        # Google Form URL (később beállítod)
-        form_url = os.environ.get('GOOGLE_FORM_URL', '')
+        print(f"💾 Lead mentés: {user_data.get('name')}")
         
-        if form_url:
-            # Form submission
-            form_data = {
-                'entry.1': lead_id,
-                'entry.2': timestamp,
-                'entry.3': page_id,
-                'entry.4': page_info.get('company_name', ''),
-                'entry.5': user_data.get('name', ''),
-                'entry.6': user_data.get('phone', ''),
-                'entry.7': user_data.get('psid', ''),
-                'entry.8': '',  # veglegesitett_idopont
-                'entry.9': user_data.get('notes', '')
-            }
-            
-            try:
-                response = requests.post(form_url, data=form_data, timeout=5)
-                print(f"✅ Lead mentve Form-on keresztül: {lead_id}")
-                return True
-            except Exception as e:
-                print(f"⚠️ Form hiba: {e}")
+        # Friss kliens létrehozása minden mentésnél
+        try:
+            creds_dict = json.loads(GOOGLE_CREDENTIALS)
+            creds = Credentials.from_service_account_info(
+                creds_dict,
+                scopes=[
+                    'https://www.googleapis.com/auth/spreadsheets',
+                    'https://www.googleapis.com/auth/drive',
+                    'https://www.googleapis.com/auth/drive.file'
+                ]
+            )
+            client = gspread.authorize(creds)
+            print("✅ Kliens létrehozva")
+        except Exception as e:
+            print(f"❌ Kliens hiba: {e}")
+            return False
         
-        # Fallback: Sheets API
-        client = get_sheets_client()
-        if client:
-            sheet = client.open_by_key(LEADS_SPREADSHEET_ID).sheet1
-            
-            row = [
-                lead_id,
-                timestamp,
-                page_id,
-                page_info.get('company_name', ''),
-                user_data.get('name', ''),
-                user_data.get('phone', ''),
-                user_data.get('psid', ''),
-                '',
-                user_data.get('notes', '')
-            ]
-            
-            sheet.append_row(row)
-            print(f"✅ Lead mentve Sheets API-val: {lead_id}")
-            return True
+        # Tábla megnyitása
+        print(f"🔍 Tábla ID: {LEADS_SPREADSHEET_ID}")
+        sheet = client.open_by_key(LEADS_SPREADSHEET_ID).sheet1
+        print("✅ Tábla megnyitva")
         
-        print(f"⚠️ Lead csak logban: {lead_id} - {user_data.get('name')}")
+        # 9 oszlop
+        row = [
+            lead_id,
+            timestamp,
+            page_id,
+            page_info.get('company_name', ''),
+            user_data.get('name', ''),
+            user_data.get('phone', ''),
+            user_data.get('psid', ''),
+            '',
+            user_data.get('notes', '')
+        ]
+        
+        print(f"📝 Sor írása: {row[:5]}...")
+        sheet.append_row(row)
+        print(f"✅ Lead mentve: {lead_id}")
         return True
         
     except Exception as e:
         print(f"❌ Lead mentési hiba: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 def update_admin_psid(page_id, admin_psid):
