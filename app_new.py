@@ -575,10 +575,10 @@ def foglalasok():
     # Leadek betöltése
     try:
         company_name = page_data[page_id].get('company_name', f'Ügyfél-{page_id[:6]}')
-        spreadsheet = get_or_create_client_spreadsheet(page_id, company_name)
+        worksheet = get_or_create_client_worksheet(page_id, company_name, "Leads")
         
-        if spreadsheet:
-            sheet = spreadsheet.worksheet("Leads")
+        if worksheet:
+            sheet = worksheet
             all_leads = sheet.get_all_records()
             leads = [l for l in all_leads if str(l.get('page_id')) == str(page_id)]
         else:
@@ -605,19 +605,19 @@ def betegek():
     # Betegek betöltése
     try:
         company_name = page_data[page_id].get('company_name', f'Ügyfél-{page_id[:6]}')
-        spreadsheet = get_or_create_client_spreadsheet(page_id, company_name)
+        worksheet = get_or_create_client_worksheet(page_id, company_name, "Leads")
         
-        if not spreadsheet:
+        if not worksheet:
             patients = []
         else:
             # Patients lap
-            patients_sheet = spreadsheet.worksheet("Patients")
+            patients_sheet = get_or_create_client_worksheet(page_id, company_name, "Patients")
             all_patients = patients_sheet.get_all_records()
             patients = [p for p in all_patients if str(p.get('page_id')) == str(page_id)]
             
             # Ha nincs beteg, akkor Leads-ből generálunk egyedi betegeket
             if not patients:
-                leads_sheet = spreadsheet.worksheet("Leads")
+                leads_sheet = worksheet
                 all_leads = leads_sheet.get_all_records()
                 page_leads = [l for l in all_leads if str(l.get('page_id')) == str(page_id)]
                 
@@ -661,14 +661,14 @@ def naptar():
     # Naptár adatok
     try:
         company_name = page_data[page_id].get('company_name', f'Ügyfél-{page_id[:6]}')
-        spreadsheet = get_or_create_client_spreadsheet(page_id, company_name)
+        worksheet = get_or_create_client_worksheet(page_id, company_name, "Leads")
         
-        if not spreadsheet:
+        if not worksheet:
             calendar_days = []
             current_month = ''
             current_year = ''
         else:
-            sheet = spreadsheet.worksheet("Leads")
+            sheet = worksheet
             all_leads = sheet.get_all_records()
             leads = [l for l in all_leads if str(l.get('page_id')) == str(page_id) and l.get('veglegesitett_idopont')]
             
@@ -749,12 +749,12 @@ def beteg_reszletek(lead_id):
     # Beteg adatok
     try:
         company_name = page_data[page_id].get('company_name', f'Ügyfél-{page_id[:6]}')
-        spreadsheet = get_or_create_client_spreadsheet(page_id, company_name)
+        worksheet = get_or_create_client_worksheet(page_id, company_name, "Leads")
         
-        if not spreadsheet:
+        if not worksheet:
             return "Hiba történt", 500
         
-        sheet = spreadsheet.worksheet("Leads")
+        sheet = worksheet
         all_leads = sheet.get_all_records()
         
         # Keressük meg a beteget
@@ -782,7 +782,7 @@ def beteg_reszletek(lead_id):
         # Kezelések betöltése
         treatments = []
         try:
-            treatments_sheet = spreadsheet.worksheet('Treatments')
+            treatments_sheet = get_or_create_client_worksheet(page_id, company_name, "Treatments")
             all_treatments = treatments_sheet.get_all_records()
             treatments = [t for t in all_treatments if t.get('beteg_id') == lead_id and str(t.get('page_id')) == str(page_id)]
         except Exception as te:
@@ -825,13 +825,13 @@ def add_patient():
         
         # Ügyfél Spreadsheet
         company_name = page_data.get(page_id, {}).get('company_name', f'Ügyfél-{page_id[:6]}')
-        spreadsheet = get_or_create_client_spreadsheet(page_id, company_name)
+        worksheet = get_or_create_client_worksheet(page_id, company_name, "Leads")
         
-        if not spreadsheet:
+        if not worksheet:
             return jsonify({"success": False, "error": "Spreadsheet hiba"}), 500
         
         # Patients lap
-        sheet = spreadsheet.worksheet("Patients")
+        sheet = get_or_create_client_worksheet(page_id, company_name, "Patients")
         
         # Sor hozzáadása: beteg_id, page_id, nev, telefon, email, cim, szuletesi_datum, megjegyzesek, letrehozva
         row = [beteg_id, page_id, nev, telefon, email, cim, szuletesi_datum, megjegyzesek, timestamp]
@@ -869,13 +869,13 @@ def add_treatment():
         
         # Ügyfél Spreadsheet
         company_name = page_data.get(page_id, {}).get('company_name', f'Ügyfél-{page_id[:6]}')
-        spreadsheet = get_or_create_client_spreadsheet(page_id, company_name)
+        worksheet = get_or_create_client_worksheet(page_id, company_name, "Leads")
         
-        if not spreadsheet:
+        if not worksheet:
             return jsonify({"success": False, "error": "Spreadsheet hiba"}), 500
         
         # Treatments lap
-        sheet = spreadsheet.worksheet("Treatments")
+        sheet = get_or_create_client_worksheet(page_id, company_name, "Treatments")
         
         # Sor hozzáadása: kezeles_id, page_id, beteg_id, tipus, datum, leiras, ar, fizetve, letrehozva
         row = [kezeles_id, page_id, beteg_id, tipus, datum, leiras, ar, fizetve, timestamp]
@@ -963,12 +963,12 @@ def update_lead():
         
         # Ügyfél Spreadsheet
         company_name = page_data.get(page_id, {}).get('company_name', f'Ügyfél-{page_id[:6]}')
-        spreadsheet = get_or_create_client_spreadsheet(page_id, company_name)
+        worksheet = get_or_create_client_worksheet(page_id, company_name, "Leads")
         
-        if not spreadsheet:
+        if not worksheet:
             return jsonify({"success": False, "error": "Spreadsheet hiba"}), 500
         
-        sheet = spreadsheet.worksheet("Leads")
+        sheet = worksheet
         
         # Keressük meg a lead_id sorát
         cell = sheet.find(lead_id)
