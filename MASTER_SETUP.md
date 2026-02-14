@@ -2,13 +2,14 @@
 
 ## Egyszerű Megoldás!
 
-Egy MASTER Spreadsheet-ben minden ügyfélnek külön lapok:
+A meglévő Leads Spreadsheet-et használjuk Master-ként! Minden ügyfélnek külön lapok:
 
 ```
-Master CRM Spreadsheet:
-├─ SmileScale_Leads
-├─ SmileScale_Patients  
-├─ SmileScale_Treatments
+Meglévő Leads Spreadsheet (Master):
+├─ Sheet1 (régi adatok - megtartjuk)
+├─ SmileScale_Leads (új lap - automatikusan létrejön)
+├─ SmileScale_Patients (új lap - automatikusan létrejön)
+├─ SmileScale_Treatments (új lap - automatikusan létrejön)
 ├─ DentalClinic_Leads
 ├─ DentalClinic_Patients
 ├─ DentalClinic_Treatments
@@ -17,21 +18,19 @@ Master CRM Spreadsheet:
 
 ## Setup Lépések
 
-### 1. Master Spreadsheet Létrehozása
+### 1. Semmi! 😎
 
-1. ✅ Hozz létre egy új Google Sheets dokumentumot
-2. ✅ Nevezd el: "SmileScale Master CRM"
-3. ✅ Share → Add a service account email-t (Editor jog)
-4. ✅ Másold ki a Spreadsheet ID-t
+A meglévő Leads Spreadsheet-et használjuk! Már meg van osztva a service account-tal!
 
 ### 2. Render Environment Variables
 
 ```bash
 GOOGLE_CREDENTIALS = {JSON}
 SPREADSHEET_ID = {Config Sheet ID}
-MASTER_SPREADSHEET_ID = {Master CRM Sheet ID}
-SECRET_KEY = smilescale_secret_key_2026
+LEADS_SPREADSHEET_ID = {Meglévő Leads Sheet ID}
 ```
+
+**Ennyi!** A `MASTER_SPREADSHEET_ID` automatikusan = `LEADS_SPREADSHEET_ID`
 
 ### 3. Működés
 
@@ -39,14 +38,15 @@ Amikor egy ügyfél először használja a rendszert:
 - ✅ Automatikusan létrejön 3 lap: `{company_name}_Leads`, `{company_name}_Patients`, `{company_name}_Treatments`
 - ✅ Fejlécek automatikusan hozzáadódnak
 - ✅ Minden adat az ügyfél saját lapjaira kerül
+- ✅ A régi Sheet1 lap megmarad (nem törlődik)
 
 ## Előnyök
 
-✅ Egy Spreadsheet = könnyű kezelés  
+✅ Meglévő Spreadsheet = nincs új setup  
 ✅ Automatikus lap létrehozás  
 ✅ Tiszta szervezés (minden ügyfélnek saját lapjai)  
-✅ Nincs szükség új Spreadsheet-ek létrehozására
+✅ Régi adatok megmaradnak
 
 ## Kész!
 
-Push-old GitHub-ra és állítsd be a `MASTER_SPREADSHEET_ID`-t! 🚀
+Push-old GitHub-ra és működik! Semmi extra setup! 🚀
