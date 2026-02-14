@@ -116,25 +116,37 @@ def save_lead(page_id, page_info, user_data):
 def update_admin_psid(page_id, admin_psid):
     """Admin PSID visszaírása a Google Sheets táblázatba."""
     try:
+        print(f"🔧 Admin PSID mentés: page_id={page_id}, psid={admin_psid}")
+        
         client = get_sheets_client()
         if not client:
+            print("❌ Kliens hiba!")
             return False
         
+        print(f"🔍 Tábla megnyitása: {SPREADSHEET_ID}")
         sheet = client.open_by_key(SPREADSHEET_ID).sheet1
+        
+        print(f"🔍 Page ID keresése: {page_id}")
         cell = sheet.find(page_id)
         if cell:
             row = cell.row
+            print(f"🔍 Sor találva: {row}, L oszlop (12.) frissítése")
             # L oszlop (12.) = admin_psid
             sheet.update_cell(row, 12, admin_psid)
+            print(f"✅ Admin PSID mentve!")
             
             global cached_page_data
             if page_id in cached_page_data:
                 cached_page_data[page_id]['admin_psid'] = admin_psid
             
             return True
+        
+        print(f"❌ Page ID nem található!")
         return False
     except Exception as e:
         print(f"❌ Hiba az admin PSID frissítésekor: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 def setup_get_started_button(page_id, access_token):
@@ -510,16 +522,17 @@ def bot_settings():
             if cell:
                 row = cell.row
                 
-                # Frissítjük az oszlopokat a VALÓDI sorrend szerint:
-                # A=page_id, B=company_name, C=access_token, D=admin_password, E=welcome_text,
-                # F=button1_text, G=button1_link, H=button2_text, I=button2_link, J=button3_text, K=button3_link, L=admin_psid
-                sheet.update_cell(row, 5, request.form.get('welcome_text', ''))  # E
-                sheet.update_cell(row, 6, request.form.get('button1_text', ''))  # F
-                sheet.update_cell(row, 7, request.form.get('button1_link', ''))  # G
-                sheet.update_cell(row, 8, request.form.get('button2_text', ''))  # H
-                sheet.update_cell(row, 9, request.form.get('button2_link', ''))  # I
-                sheet.update_cell(row, 10, request.form.get('button3_text', ''))  # J
-                sheet.update_cell(row, 11, request.form.get('button3_link', ''))  # K
+                # Frissítjük az oszlopokat a VALÓDI sorrend szerint (1-gyel eltolva):
+                # A=page_id(1), B=company_name(2), C=access_token(3), D=admin_password(4), E=welcome_text(5),
+                # F=button1_text(6), G=button1_link(7), H=button2_text(8), I=button2_link(9), J=button3_text(10), K=button3_link(11), L=admin_psid(12)
+                # DE a find() az A oszlopot találja (1), és onnan számol, szóval +1 kell mindenhova!
+                sheet.update_cell(row, 5, request.form.get('welcome_text', ''))  # E (5)
+                sheet.update_cell(row, 6, request.form.get('button1_text', ''))  # F (6)
+                sheet.update_cell(row, 7, request.form.get('button1_link', ''))  # G (7)
+                sheet.update_cell(row, 8, request.form.get('button2_text', ''))  # H (8)
+                sheet.update_cell(row, 9, request.form.get('button2_link', ''))  # I (9)
+                sheet.update_cell(row, 10, request.form.get('button3_text', ''))  # J (10)
+                sheet.update_cell(row, 11, request.form.get('button3_link', ''))  # K (11)
                 
                 success = True
                 
