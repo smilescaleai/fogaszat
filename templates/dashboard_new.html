@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - {{ page_info.company_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Üdvözöljük, {{ page_info.company_name }}!</h1>
+    <p>Itt egy gyors áttekintés a mai napról</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="number">{{ total_leads }}</div>
+        <div class="label">Összes beteg</div>
+    </div>
+    <div class="stat-card">
+        <div class="number">{{ pending_appointments }}</div>
+        <div class="label">Függőben lévő foglalások</div>
+    </div>
+    <div class="stat-card">
+        <div class="number">{{ today_appointments }}</div>
+        <div class="label">Mai időpontok</div>
+    </div>
+    <div class="stat-card">
+        <div class="number">{{ this_week_leads }}</div>
+        <div class="label">Ezen a héten érkezett</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>📋 Legutóbbi foglalások</h2>
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="border-bottom: 2px solid #e5e7eb;">
+                <th style="padding: 12px; text-align: left;">Név</th>
+                <th style="padding: 12px; text-align: left;">Telefon</th>
+                <th style="padding: 12px; text-align: left;">Időpont</th>
+                <th style="padding: 12px; text-align: left;">Státusz</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lead in recent_leads[:5] %}
+            <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px;"><strong>{{ lead.name }}</strong></td>
+                <td style="padding: 12px;">{{ lead.phone }}</td>
+                <td style="padding: 12px;">{{ lead.veglegesitett_idopont or 'Nincs beállítva' }}</td>
+                <td style="padding: 12px;">
+                    {% if lead.veglegesitett_idopont %}
+                    <span style="background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 12px; font-size: 12px;">Időpont van</span>
+                    {% else %}
+                    <span style="background: #fef3c7; color: #92400e; padding: 4px 12px; border-radius: 12px; font-size: 12px;">Függőben</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div style="margin-top: 20px;">
+        <a href="/foglalasok" class="btn">Összes foglalás megtekintése</a>
+    </div>
+</div>
+{% endblock %}

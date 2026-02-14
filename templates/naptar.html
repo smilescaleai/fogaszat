@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Naptár - {{ page_info.company_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .calendar { background: white; border-radius: 12px; padding: 24px; }
+    .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .calendar-header h2 { font-size: 24px; color: #1f2937; }
+    .calendar-nav button { padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 0 5px; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+    .calendar-day-header { text-align: center; font-weight: 600; color: #6b7280; padding: 10px; }
+    .calendar-day { background: #f9fafb; border-radius: 8px; padding: 12px; min-height: 100px; position: relative; }
+    .calendar-day.today { background: #eff6ff; border: 2px solid #667eea; }
+    .calendar-day-number { font-weight: 600; color: #374151; margin-bottom: 8px; }
+    .appointment { background: #667eea; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-bottom: 4px; cursor: pointer; }
+    .appointment:hover { background: #5568d3; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📅 Naptár</h1>
+    <p>Időpontok naptár nézetben</p>
+</div>
+
+<div class="calendar">
+    <div class="calendar-header">
+        <h2>{{ current_month }} {{ current_year }}</h2>
+        <div class="calendar-nav">
+            <button onclick="previousMonth()">◀ Előző</button>
+            <button onclick="today()">Ma</button>
+            <button onclick="nextMonth()">Következő ▶</button>
+        </div>
+    </div>
+    
+    <div class="calendar-grid">
+        <div class="calendar-day-header">Hétfő</div>
+        <div class="calendar-day-header">Kedd</div>
+        <div class="calendar-day-header">Szerda</div>
+        <div class="calendar-day-header">Csütörtök</div>
+        <div class="calendar-day-header">Péntek</div>
+        <div class="calendar-day-header">Szombat</div>
+        <div class="calendar-day-header">Vasárnap</div>
+        
+        {% for day in calendar_days %}
+        <div class="calendar-day {% if day.is_today %}today{% endif %}" {% if not day.day %}style="background: transparent; border: none;"{% endif %}>
+            {% if day.day %}
+            <div class="calendar-day-number">{{ day.day }}</div>
+            {% for appointment in day.appointments %}
+            <div class="appointment" onclick="viewAppointment('{{ appointment.lead_id }}')">
+                {{ appointment.time }} - {{ appointment.name }}
+            </div>
+            {% endfor %}
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    function previousMonth() {
+        const currentOffset = {{ month_offset }};
+        window.location.href = '/naptar?month=' + (currentOffset - 1);
+    }
+    
+    function today() {
+        window.location.href = '/naptar';
+    }
+    
+    function nextMonth() {
+        const currentOffset = {{ month_offset }};
+        window.location.href = '/naptar?month=' + (currentOffset + 1);
+    }
+    
+    function viewAppointment(leadId) {
+        window.location.href = '/beteg/' + leadId;
+    }
+</script>
+{% endblock %}

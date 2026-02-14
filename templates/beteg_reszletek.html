@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}{{ patient.nev }} - {{ page_info.company_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>👤 {{ patient.nev }}</h1>
+    <p>Beteg részletek és kezelési történet</p>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+    <!-- Beteg adatok -->
+    <div class="card">
+        <h2>📋 Alapadatok</h2>
+        <div style="margin-bottom: 16px;">
+            <strong>Telefon:</strong><br>
+            <a href="tel:{{ patient.telefon }}" style="color: #667eea;">{{ patient.telefon }}</a>
+        </div>
+        {% if patient.email %}
+        <div style="margin-bottom: 16px;">
+            <strong>Email:</strong><br>
+            <a href="mailto:{{ patient.email }}" style="color: #667eea;">{{ patient.email }}</a>
+        </div>
+        {% endif %}
+        {% if patient.cim %}
+        <div style="margin-bottom: 16px;">
+            <strong>Cím:</strong><br>
+            {{ patient.cim }}
+        </div>
+        {% endif %}
+        {% if patient.szuletesi_datum %}
+        <div style="margin-bottom: 16px;">
+            <strong>Születési dátum:</strong><br>
+            {{ patient.szuletesi_datum }}
+        </div>
+        {% endif %}
+        <div style="margin-bottom: 16px;">
+            <strong>Létrehozva:</strong><br>
+            {{ patient.letrehozva }}
+        </div>
+        {% if patient.megjegyzesek %}
+        <div style="margin-bottom: 16px;">
+            <strong>Megjegyzések:</strong><br>
+            {{ patient.megjegyzesek }}
+        </div>
+        {% endif %}
+        <button onclick="editPatient()" class="btn" style="width: 100%; margin-top: 20px;">✏️ Szerkesztés</button>
+    </div>
+    
+    <!-- Kezelési történet -->
+    <div>
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>🦷 Kezelési történet</h2>
+                <button onclick="addTreatment()" class="btn">➕ Új kezelés</button>
+            </div>
+            
+            {% if treatments %}
+            <div style="max-height: 400px; overflow-y: auto;">
+                {% for treatment in treatments %}
+                <div style="border-left: 4px solid #667eea; padding: 16px; margin-bottom: 16px; background: #f9fafb; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                        <strong style="color: #667eea;">{{ treatment.tipus }}</strong>
+                        <span style="color: #6b7280; font-size: 14px;">{{ treatment.datum }}</span>
+                    </div>
+                    <p style="color: #374151; margin-bottom: 8px;">{{ treatment.leiras }}</p>
+                    {% if treatment.ar %}
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 600;">{{ treatment.ar }} Ft</span>
+                        {% if treatment.fizetve %}
+                        <span style="background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 12px; font-size: 12px;">Fizetve</span>
+                        {% else %}
+                        <span style="background: #fef3c7; color: #92400e; padding: 4px 12px; border-radius: 12px; font-size: 12px;">Függőben</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="text-align: center; padding: 40px; color: #9ca3af;">Még nincs kezelési történet</p>
+            {% endif %}
+        </div>
+        
+        <!-- Időpontok -->
+        <div class="card" style="margin-top: 24px;">
+            <h2>📅 Időpontok</h2>
+            {% if appointments %}
+            {% for apt in appointments %}
+            <div style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
+                <strong>{{ apt.veglegesitett_idopont }}</strong>
+                <p style="color: #6b7280; margin-top: 4px;">{{ apt.megjegyzes }}</p>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p style="text-align: center; padding: 20px; color: #9ca3af;">Nincs időpont</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add Treatment Modal -->
+<div id="treatment-modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
+    <div style="background: white; margin: 5% auto; padding: 32px; border-radius: 12px; width: 90%; max-width: 600px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+        <span onclick="closeTreatmentModal()" style="color: #9ca3af; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+        <h2>➕ Új kezelés hozzáadása</h2>
+        <form id="treatment-form" onsubmit="saveTreatment(event)">
+            <input type="hidden" name="beteg_id" value="{{ patient.beteg_id }}">
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Kezelés típusa *</label>
+                <input type="text" name="tipus" required style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;">
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Dátum *</label>
+                <input type="date" name="datum" required style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;">
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Leírás</label>
+                <textarea name="leiras" rows="3" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;"></textarea>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Ár (Ft)</label>
+                <input type="number" name="ar" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;">
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fizetve" value="1">
+                    <span>Fizetve</span>
+                </label>
+            </div>
+            <button type="submit" class="btn">💾 Mentés</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function editPatient() {
+        alert('Szerkesztés - hamarosan!');
+    }
+    
+    function addTreatment() {
+        document.getElementById('treatment-modal').style.display = 'block';
+    }
+    
+    function closeTreatmentModal() {
+        document.getElementById('treatment-modal').style.display = 'none';
+    }
+    
+    function saveTreatment(event) {
+        event.preventDefault();
+        
+        const formData = new FormData(event.target);
+        
+        fetch('/add-treatment', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                closeTreatmentModal();
+                location.reload();
+            } else {
+                alert('Hiba: ' + data.error);
+            }
+        })
+        .catch(err => alert('Hiba: ' + err));
+    }
+</script>
+{% endblock %}
