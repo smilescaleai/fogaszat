@@ -11,6 +11,8 @@ from io import StringIO
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'smilescale_secret_key_2026')
 
+# Version: 2.1 - Auto Spreadsheet Creation
+
 # Admin felhasználók tárolása (PSID alapján, page_id szerint csoportosítva)
 admin_users = {}
 
@@ -815,9 +817,6 @@ def beteg_reszletek(lead_id):
     return render_template('beteg_reszletek.html', 
                          page_info=page_data[page_id], 
                          patient=patient,
-                         appointments=appointments,
-                         treatments=treatments,
-                         page_id=page_id)
                          appointments=appointments,
                          treatments=treatments,
                          page_id=page_id)
