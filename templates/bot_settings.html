@@ -4,59 +4,111 @@
 
 {% block content %}
 <div class="page-header">
-    <h1>⚙️ Messenger Bot Testreszabás</h1>
+    <h1>Messenger Bot Testreszabás</h1>
     <p>Bot üzenetek és gombok szerkesztése</p>
 </div>
 
 <div class="card">
     {% if success %}
-    <div style="background: #d1fae5; border-left: 4px solid #10b981; padding: 16px; border-radius: 4px; margin-bottom: 24px; color: #065f46;">
-        <strong>✅ Siker!</strong> A bot beállítások mentve. A változások 1-2 percen belül érvénybe lépnek.
+    <div style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 16px; border-radius: 10px; margin-bottom: 24px; color: #10b981; display: flex; align-items: center; gap: 12px;">
+        <i data-lucide="check-circle" style="width: 24px; height: 24px;"></i>
+        <div>
+            <strong>Siker!</strong>
+            <p style="margin: 4px 0 0 0; opacity: 0.9;">A bot beállítások mentve. A változások 1-2 percen belül érvénybe lépnek.</p>
+        </div>
     </div>
     {% endif %}
     
     <form method="POST">
-        <div style="margin-bottom: 24px;">
-            <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">🎉 Üdvözlő szöveg</label>
-            <textarea name="welcome_text" required style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; min-height: 100px; resize: vertical;">{{ page_info.welcome_text }}</textarea>
+        <div style="margin-bottom: 32px;">
+            <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
+                Üdvözlő szöveg
+            </label>
+            <textarea name="welcome_text" required style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; min-height: 120px; resize: vertical; background: var(--bg); color: var(--text); transition: all 0.2s;">{{ page_info.welcome_text }}</textarea>
         </div>
         
-        <h3 style="margin: 32px 0 16px 0; color: #374151;">Gombok</h3>
+        <h3 style="margin: 32px 0 24px 0; color: var(--text); display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="mouse-pointer-click" style="width: 20px; height: 20px;"></i>
+            Gombok
+        </h3>
         
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-            <div style="margin-bottom: 24px;">
-                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">1️⃣ Gomb szövege</label>
-                <input type="text" name="button1_text" value="{{ page_info.button1_text }}" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;">
+        <!-- Button 1 -->
+        <div style="background: var(--bg); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border);">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, var(--primary), #8b5cf6); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;">1</div>
+                <h4 style="margin: 0; color: var(--text);">Első gomb</h4>
             </div>
-            <div style="margin-bottom: 24px;">
-                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Válasz szöveg</label>
-                <input type="text" name="button1_link" value="{{ page_info.button1_link }}" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;">
-            </div>
-        </div>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-            <div style="margin-bottom: 24px;">
-                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">2️⃣ Gomb szövege</label>
-                <input type="text" name="button2_text" value="{{ page_info.button2_text }}" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;">
-            </div>
-            <div style="margin-bottom: 24px;">
-                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Válasz szöveg</label>
-                <textarea name="button2_link" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;">{{ page_info.button2_link }}</textarea>
-            </div>
-        </div>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-            <div style="margin-bottom: 24px;">
-                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">3️⃣ Gomb szövege</label>
-                <input type="text" name="button3_text" value="{{ page_info.button3_text }}" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;">
-            </div>
-            <div style="margin-bottom: 24px;">
-                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Válasz szöveg</label>
-                <textarea name="button3_link" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;">{{ page_info.button3_link }}</textarea>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Gomb szövege</label>
+                    <input type="text" name="button1_text" value="{{ page_info.button1_text }}" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--surface); color: var(--text); transition: all 0.2s;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Válasz szöveg</label>
+                    <input type="text" name="button1_link" value="{{ page_info.button1_link }}" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--surface); color: var(--text); transition: all 0.2s;">
+                </div>
             </div>
         </div>
         
-        <button type="submit" class="btn">💾 Mentés</button>
+        <!-- Button 2 -->
+        <div style="background: var(--bg); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border);">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, var(--primary), #8b5cf6); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;">2</div>
+                <h4 style="margin: 0; color: var(--text);">Második gomb</h4>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Gomb szövege</label>
+                    <input type="text" name="button2_text" value="{{ page_info.button2_text }}" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--surface); color: var(--text); transition: all 0.2s;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Válasz szöveg</label>
+                    <textarea name="button2_link" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--surface); color: var(--text); resize: vertical; min-height: 46px; transition: all 0.2s;">{{ page_info.button2_link }}</textarea>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Button 3 -->
+        <div style="background: var(--bg); padding: 20px; border-radius: 12px; margin-bottom: 32px; border: 1px solid var(--border);">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, var(--primary), #8b5cf6); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;">3</div>
+                <h4 style="margin: 0; color: var(--text);">Harmadik gomb</h4>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Gomb szövege</label>
+                    <input type="text" name="button3_text" value="{{ page_info.button3_text }}" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--surface); color: var(--text); transition: all 0.2s;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Válasz szöveg</label>
+                    <textarea name="button3_link" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--surface); color: var(--text); resize: vertical; min-height: 46px; transition: all 0.2s;">{{ page_info.button3_link }}</textarea>
+                </div>
+            </div>
+        </div>
+        
+        <button type="submit" class="btn" style="width: 100%; justify-content: center; padding: 14px;">
+            <i data-lucide="save" style="width: 20px; height: 20px;"></i>
+            Mentés
+        </button>
     </form>
 </div>
+
+<script>
+    lucide.createIcons();
+    
+    // Add focus effects to inputs
+    const inputs = document.querySelectorAll('input, textarea');
+    inputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            this.style.borderColor = 'var(--primary)';
+            this.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+        });
+        
+        input.addEventListener('blur', function() {
+            this.style.borderColor = 'var(--border)';
+            this.style.boxShadow = 'none';
+        });
+    });
+</script>
 {% endblock %}

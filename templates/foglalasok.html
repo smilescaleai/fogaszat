@@ -4,72 +4,106 @@
 
 {% block content %}
 <div class="page-header">
-    <h1>📋 Foglalások</h1>
+    <h1>Foglalások</h1>
     <p>Összes időpontfoglalás kezelése</p>
 </div>
 
 <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2>Időpontfoglalások listája</h2>
-        <input type="text" id="search" placeholder="🔍 Keresés név vagy telefon alapján..." style="padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; width: 300px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h2>
+            <i data-lucide="calendar-check" style="width: 20px; height: 20px;"></i>
+            Időpontfoglalások listája
+        </h2>
+        <input type="text" id="search" placeholder="Keresés név vagy telefon alapján..." style="padding: 12px 16px; border: 1px solid var(--border); border-radius: 10px; width: 300px; background: var(--surface); color: var(--text); font-size: 14px; transition: all 0.2s;">
     </div>
     
     {% if leads %}
-    <table id="leads-table" style="width: 100%; border-collapse: collapse;">
-        <thead>
-            <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
-                <th style="padding: 12px; text-align: left;">Beérkezett</th>
-                <th style="padding: 12px; text-align: left;">Név</th>
-                <th style="padding: 12px; text-align: left;">Telefon</th>
-                <th style="padding: 12px; text-align: left;">Véglegesített időpont</th>
-                <th style="padding: 12px; text-align: left;">Megjegyzés</th>
-                <th style="padding: 12px; text-align: left;">Műveletek</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for lead in leads|reverse %}
-            <tr onclick="openModal('{{ lead.lead_id }}', '{{ lead.name }}', '{{ lead.veglegesitett_idopont }}')" style="cursor: pointer; border-bottom: 1px solid #e5e7eb;">
-                <td style="padding: 12px;">{{ lead.beerkezett or '' }}</td>
-                <td style="padding: 12px;"><strong>{{ lead.name }}</strong></td>
-                <td style="padding: 12px;">{{ lead.phone }}</td>
-                <td style="padding: 12px;">
-                    {% if lead.veglegesitett_idopont %}
-                    <span style="background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 12px; font-size: 12px;">{{ lead.veglegesitett_idopont }}</span>
-                    {% else %}
-                    <span style="background: #fef3c7; color: #92400e; padding: 4px 12px; border-radius: 12px; font-size: 12px;">Nincs időpont</span>
-                    {% endif %}
-                </td>
-                <td style="padding: 12px;">{{ lead.megjegyzes }}</td>
-                <td style="padding: 12px;" onclick="event.stopPropagation();">
-                    <a href="/beteg/{{ lead.lead_id }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 14px;">Részletek</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div style="overflow-x: auto;">
+        <table id="leads-table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border);">
+                    <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">BEÉRKEZETT</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">NÉV</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">TELEFON</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">IDŐPONT</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">MEGJEGYZÉS</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">MŰVELETEK</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lead in leads|reverse %}
+                <tr onclick="openModal('{{ lead.lead_id }}', '{{ lead.name }}', '{{ lead.veglegesitett_idopont }}')" style="cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.2s;" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 16px; color: var(--text-muted); font-size: 14px;">{{ lead.beerkezett or '' }}</td>
+                    <td style="padding: 16px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #8b5cf6); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px;">
+                                {{ lead.name[0].upper() }}
+                            </div>
+                            <strong>{{ lead.name }}</strong>
+                        </div>
+                    </td>
+                    <td style="padding: 16px; color: var(--text-muted);">{{ lead.phone }}</td>
+                    <td style="padding: 16px;">
+                        {% if lead.veglegesitett_idopont %}
+                        <span style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px;">
+                            <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i>
+                            {{ lead.veglegesitett_idopont }}
+                        </span>
+                        {% else %}
+                        <span style="background: rgba(251, 191, 36, 0.1); color: #fbbf24; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px;">
+                            <i data-lucide="clock" style="width: 14px; height: 14px;"></i>
+                            Nincs időpont
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 16px; color: var(--text-muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ lead.megjegyzes }}</td>
+                    <td style="padding: 16px;" onclick="event.stopPropagation();">
+                        <a href="/beteg/{{ lead.lead_id }}" class="btn-secondary" style="padding: 8px 16px; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); color: var(--text); transition: all 0.2s;">
+                            <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+                            Részletek
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     {% else %}
-    <p style="text-align: center; padding: 40px; color: #9ca3af;">Még nincs időpontfoglalás</p>
+    <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+        <i data-lucide="inbox" style="width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+        <p>Még nincs időpontfoglalás</p>
+    </div>
     {% endif %}
 </div>
 
 <!-- Modal -->
-<div id="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
-    <div style="background: white; margin: 10% auto; padding: 32px; border-radius: 12px; width: 90%; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
-        <span onclick="closeModal()" style="color: #9ca3af; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
-        <h2>📅 Időpont beállítása</h2>
-        <p><strong id="modal-name"></strong></p>
+<div id="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); animation: fadeIn 0.2s;">
+    <div style="background: var(--surface); margin: 10% auto; padding: 32px; border-radius: 16px; width: 90%; max-width: 500px; box-shadow: 0 20px 60px var(--shadow); animation: slideUp 0.3s; border: 1px solid var(--border);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2 style="display: flex; align-items: center; gap: 8px; margin: 0;">
+                <i data-lucide="calendar" style="width: 24px; height: 24px;"></i>
+                Időpont beállítása
+            </h2>
+            <span onclick="closeModal()" style="color: var(--text-muted); font-size: 28px; font-weight: bold; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='transparent'">&times;</span>
+        </div>
+        <p style="margin-bottom: 24px;"><strong id="modal-name" style="color: var(--text);"></strong></p>
         <form id="update-form" onsubmit="updateLead(event)">
             <input type="hidden" id="lead-id" name="lead_id">
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Véglegesített időpont:</label>
-                <input type="datetime-local" id="idopont" name="idopont" required style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;">
+            <div style="margin-bottom: 24px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Véglegesített időpont:</label>
+                <input type="datetime-local" id="idopont" name="idopont" required style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--text); transition: all 0.2s;">
             </div>
-            <button type="submit" class="btn">💾 Mentés</button>
+            <button type="submit" class="btn" style="width: 100%; justify-content: center;">
+                <i data-lucide="save" style="width: 18px; height: 18px;"></i>
+                Mentés
+            </button>
         </form>
     </div>
 </div>
 
 <script>
+    lucide.createIcons();
+    
     // Keresés
     document.getElementById('search').addEventListener('keyup', function() {
         const searchTerm = this.value.toLowerCase();
@@ -79,6 +113,17 @@
             const text = row.textContent.toLowerCase();
             row.style.display = text.includes(searchTerm) ? '' : 'none';
         });
+    });
+    
+    // Search input focus effect
+    document.getElementById('search').addEventListener('focus', function() {
+        this.style.borderColor = 'var(--primary)';
+        this.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+    });
+    
+    document.getElementById('search').addEventListener('blur', function() {
+        this.style.borderColor = 'var(--border)';
+        this.style.boxShadow = 'none';
     });
     
     function openModal(leadId, name, currentIdopont) {
@@ -93,6 +138,8 @@
                 document.getElementById('idopont').value = date + 'T' + parts[1];
             }
         }
+        
+        lucide.createIcons();
     }
     
     function closeModal() {
@@ -129,6 +176,6 @@
         if (modal.style.display !== 'block') {
             location.reload();
         }
-    }, 30000); // 30 másodpercenként
+    }, 30000);
 </script>
 {% endblock %}

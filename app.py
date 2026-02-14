@@ -667,7 +667,6 @@ def naptar():
             current_year = ''
         else:
             all_leads = worksheet.get_all_records()
-            all_leads = sheet.get_all_records()
             leads = [l for l in all_leads if str(l.get('page_id')) == str(page_id) and l.get('veglegesitett_idopont')]
             
             # Aktuális hónap számítása
@@ -747,42 +746,67 @@ def beteg_reszletek(lead_id):
     # Beteg adatok
     try:
         company_name = page_data[page_id].get('company_name', f'Ugyfél{page_id[:6]}')
-        worksheet = get_or_create_client_worksheet(page_id, company_name, "Leads")
         
-        if not worksheet:
-            return "Hiba történt", 500
-        
-        sheet = worksheet
-        all_leads = sheet.get_all_records()
-        
-        # Keressük meg a beteget
+        # Először próbáljuk a Patients lapból
         patient = None
-        for lead in all_leads:
-            if lead.get('lead_id') == lead_id:
-                patient = {
-                    'beteg_id': lead.get('lead_id'),
-                    'nev': lead.get('name'),
-                    'telefon': lead.get('phone'),
-                    'email': '',
-                    'cim': '',
-                    'szuletesi_datum': '',
-                    'megjegyzesek': lead.get('megjegyzes', ''),
-                    'letrehozva': lead.get('beerkezett', '')
-                }
-                break
+        patients_worksheet = get_or_create_client_worksheet(page_id, company_name, "Patients")
+        if patients_worksheet:
+            all_patients = patients_worksheet.get_all_records()
+            for p in all_patients:
+                if str(p.get('beteg_id')) == str(lead_id):
+                    patient = {
+                        'beteg_id': p.get('beteg_id'),
+                        'nev': p.get('nev'),
+                        'telefon': p.get('telefon'),
+                        'email': p.get('email', ''),
+                        'cim': p.get('cim', ''),
+                        'szuletesi_datum': p.get('szuletesi_datum', ''),
+                        'megjegyzesek': p.get('megjegyzesek', ''),
+                        'letrehozva': p.get('letrehozva', '')
+                    }
+                    break
+        
+        # Ha nincs a Patients-ben, keressük a Leads-ben
+        if not patient:
+            leads_worksheet = get_or_create_client_worksheet(page_id, company_name, "Leads")
+            if not leads_worksheet:
+                return "Hiba történt", 500
+            
+            all_leads = leads_worksheet.get_all_records()
+            
+            for lead in all_leads:
+                if str(lead.get('lead_id')) == str(lead_id):
+                    patient = {
+                        'beteg_id': lead.get('lead_id'),
+                        'nev': lead.get('name'),
+                        'telefon': lead.get('phone'),
+                        'email': '',
+                        'cim': '',
+                        'szuletesi_datum': '',
+                        'megjegyzesek': lead.get('megjegyzes', ''),
+                        'letrehozva': lead.get('beerkezett', '')
+                    }
+                    break
         
         if not patient:
+            print(f"❌ Beteg nem található: {lead_id}")
             return "Beteg nem található", 404
         
-        # Időpontok
-        appointments = [l for l in all_leads if l.get('phone') == patient['telefon']]
+        # Időpontok (Leads-ből)
+        leads_worksheet = get_or_create_client_worksheet(page_id, company_name, "Leads")
+        if leads_worksheet:
+            all_leads = leads_worksheet.get_all_records()
+            appointments = [l for l in all_leads if str(l.get('phone')) == str(patient['telefon'])]
+        else:
+            appointments = []
         
         # Kezelések betöltése
         treatments = []
         try:
             treatments_sheet = get_or_create_client_worksheet(page_id, company_name, "Treatments")
-            all_treatments = treatments_sheet.get_all_records()
-            treatments = [t for t in all_treatments if t.get('beteg_id') == lead_id and str(t.get('page_id')) == str(page_id)]
+            if treatments_sheet:
+                all_treatments = treatments_sheet.get_all_records()
+                treatments = [t for t in all_treatments if str(t.get('beteg_id')) == str(lead_id) and str(t.get('page_id')) == str(page_id)]
         except Exception as te:
             print(f"⚠️ Kezelések betöltési hiba: {te}")
             treatments = []
@@ -983,6 +1007,19 @@ def update_lead():
         import traceback
         traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/settings')
+def settings():
+    if 'page_id' not in session:
+        return redirect(url_for('login'))
+    
+    page_id = session['page_id']
+    page_data = load_page_data()
+    
+    if page_id not in page_data:
+        return redirect(url_for('login'))
+    
+    return render_template('settings.html', page_info=page_data[page_id], page_id=page_id)
 
 @app.route('/logout')
 def logout():

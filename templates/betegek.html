@@ -4,85 +4,116 @@
 
 {% block content %}
 <div class="page-header">
-    <h1>👥 Betegek</h1>
+    <h1>Betegek</h1>
     <p>Beteg adatbázis és kezelési történet</p>
 </div>
 
 <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2>Betegek listája</h2>
-        <div>
-            <input type="text" id="search" placeholder="🔍 Keresés..." style="padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; width: 300px; margin-right: 10px;">
-            <button onclick="openAddModal()" class="btn">➕ Új beteg</button>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+        <h2 style="margin: 0;">
+            <i data-lucide="users" style="width: 20px; height: 20px;"></i>
+            Betegek listája
+        </h2>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <input type="text" id="search" placeholder="Keresés..." style="padding: 12px 16px; border: 1px solid var(--border); border-radius: 10px; width: 250px; background: var(--surface); color: var(--text); font-size: 14px; transition: all 0.2s;">
+            <button onclick="openAddModal()" class="btn" style="white-space: nowrap;">
+                <i data-lucide="user-plus" style="width: 18px; height: 18px;"></i>
+                Új beteg
+            </button>
         </div>
     </div>
     
     {% if patients %}
-    <table id="patients-table" style="width: 100%; border-collapse: collapse;">
-        <thead>
-            <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
-                <th style="padding: 12px; text-align: left;">Név</th>
-                <th style="padding: 12px; text-align: left;">Telefon</th>
-                <th style="padding: 12px; text-align: left;">Email</th>
-                <th style="padding: 12px; text-align: left;">Utolsó látogatás</th>
-                <th style="padding: 12px; text-align: left;">Műveletek</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for patient in patients %}
-            <tr style="border-bottom: 1px solid #e5e7eb;">
-                <td style="padding: 12px;"><strong>{{ patient.nev }}</strong></td>
-                <td style="padding: 12px;">{{ patient.telefon }}</td>
-                <td style="padding: 12px;">{{ patient.email or '-' }}</td>
-                <td style="padding: 12px;">{{ patient.utolso_latogatas or 'Nincs adat' }}</td>
-                <td style="padding: 12px;">
-                    <a href="/beteg/{{ patient.beteg_id }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 14px;">Részletek</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div style="overflow-x: auto;">
+        <table id="patients-table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border);">
+                    <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">NÉV</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">TELEFON</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">EMAIL</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">UTOLSÓ LÁTOGATÁS</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">MŰVELETEK</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for patient in patients %}
+                <tr style="border-bottom: 1px solid var(--border); transition: background 0.2s;" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 16px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #8b5cf6); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px;">
+                                {{ patient.nev[0].upper() }}
+                            </div>
+                            <strong>{{ patient.nev }}</strong>
+                        </div>
+                    </td>
+                    <td style="padding: 16px; color: var(--text-muted);">{{ patient.telefon }}</td>
+                    <td style="padding: 16px; color: var(--text-muted);">{{ patient.email or '-' }}</td>
+                    <td style="padding: 16px; color: var(--text-muted);">{{ patient.utolso_latogatas or 'Nincs adat' }}</td>
+                    <td style="padding: 16px;">
+                        <a href="/beteg/{{ patient.beteg_id }}" class="btn-secondary" style="padding: 8px 16px; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); color: var(--text); transition: all 0.2s;">
+                            <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+                            Részletek
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     {% else %}
-    <p style="text-align: center; padding: 40px; color: #9ca3af;">Még nincs beteg az adatbázisban</p>
+    <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+        <i data-lucide="users" style="width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+        <p>Még nincs beteg az adatbázisban</p>
+    </div>
     {% endif %}
 </div>
 
 <!-- Add Patient Modal -->
-<div id="add-modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
-    <div style="background: white; margin: 5% auto; padding: 32px; border-radius: 12px; width: 90%; max-width: 600px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-height: 80vh; overflow-y: auto;">
-        <span onclick="closeAddModal()" style="color: #9ca3af; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
-        <h2>➕ Új beteg hozzáadása</h2>
+<div id="add-modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); animation: fadeIn 0.2s;">
+    <div style="background: var(--surface); margin: 5% auto; padding: 32px; border-radius: 16px; width: 90%; max-width: 600px; box-shadow: 0 20px 60px var(--shadow); max-height: 80vh; overflow-y: auto; border: 1px solid var(--border); animation: slideUp 0.3s;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2 style="display: flex; align-items: center; gap: 8px; margin: 0;">
+                <i data-lucide="user-plus" style="width: 24px; height: 24px;"></i>
+                Új beteg hozzáadása
+            </h2>
+            <span onclick="closeAddModal()" style="color: var(--text-muted); font-size: 28px; font-weight: bold; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='transparent'">&times;</span>
+        </div>
         <form id="add-form" onsubmit="addPatient(event)">
             <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Név *</label>
-                <input type="text" name="nev" required style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Név *</label>
+                <input type="text" name="nev" required style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--text); transition: all 0.2s;">
             </div>
             <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Telefon *</label>
-                <input type="tel" name="telefon" required style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Telefon *</label>
+                <input type="tel" name="telefon" required style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--text); transition: all 0.2s;">
             </div>
             <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Email</label>
-                <input type="email" name="email" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Email</label>
+                <input type="email" name="email" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--text); transition: all 0.2s;">
             </div>
             <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Cím</label>
-                <input type="text" name="cim" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Cím</label>
+                <input type="text" name="cim" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--text); transition: all 0.2s;">
             </div>
             <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Születési dátum</label>
-                <input type="date" name="szuletesi_datum" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Születési dátum</label>
+                <input type="date" name="szuletesi_datum" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--text); transition: all 0.2s;">
             </div>
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Megjegyzések</label>
-                <textarea name="megjegyzesek" rows="3" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;"></textarea>
+            <div style="margin-bottom: 24px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Megjegyzések</label>
+                <textarea name="megjegyzesek" rows="3" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--text); resize: vertical; transition: all 0.2s;"></textarea>
             </div>
-            <button type="submit" class="btn">💾 Mentés</button>
+            <button type="submit" class="btn" style="width: 100%; justify-content: center;">
+                <i data-lucide="save" style="width: 18px; height: 18px;"></i>
+                Mentés
+            </button>
         </form>
     </div>
 </div>
 
 <script>
+    lucide.createIcons();
+    
     document.getElementById('search').addEventListener('keyup', function() {
         const searchTerm = this.value.toLowerCase();
         const rows = document.querySelectorAll('#patients-table tbody tr');
@@ -93,8 +124,20 @@
         });
     });
     
+    // Search input focus effect
+    document.getElementById('search').addEventListener('focus', function() {
+        this.style.borderColor = 'var(--primary)';
+        this.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+    });
+    
+    document.getElementById('search').addEventListener('blur', function() {
+        this.style.borderColor = 'var(--border)';
+        this.style.boxShadow = 'none';
+    });
+    
     function openAddModal() {
         document.getElementById('add-modal').style.display = 'block';
+        lucide.createIcons();
     }
     
     function closeAddModal() {

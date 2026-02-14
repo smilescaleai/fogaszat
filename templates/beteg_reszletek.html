@@ -4,73 +4,126 @@
 
 {% block content %}
 <div class="page-header">
-    <h1>👤 {{ patient.nev }}</h1>
+    <h1>{{ patient.nev }}</h1>
     <p>Beteg részletek és kezelési történet</p>
 </div>
 
 <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
     <!-- Beteg adatok -->
     <div class="card">
-        <h2>📋 Alapadatok</h2>
-        <div style="margin-bottom: 16px;">
-            <strong>Telefon:</strong><br>
-            <a href="tel:{{ patient.telefon }}" style="color: #667eea;">{{ patient.telefon }}</a>
+        <h2>
+            <i data-lucide="user" style="width: 20px; height: 20px;"></i>
+            Alapadatok
+        </h2>
+        
+        <div style="text-align: center; margin-bottom: 24px;">
+            <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #8b5cf6); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 32px; margin: 0 auto 16px;">
+                {{ patient.nev[0].upper() }}
+            </div>
+            <h3 style="margin: 0; color: var(--text);">{{ patient.nev }}</h3>
         </div>
+        
+        <div style="margin-bottom: 16px; padding: 12px; background: var(--bg); border-radius: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 13px; margin-bottom: 4px;">
+                <i data-lucide="phone" style="width: 16px; height: 16px;"></i>
+                <strong>Telefon</strong>
+            </div>
+            <a href="tel:{{ patient.telefon }}" style="color: var(--primary); text-decoration: none; font-weight: 500;">{{ patient.telefon }}</a>
+        </div>
+        
         {% if patient.email %}
-        <div style="margin-bottom: 16px;">
-            <strong>Email:</strong><br>
-            <a href="mailto:{{ patient.email }}" style="color: #667eea;">{{ patient.email }}</a>
+        <div style="margin-bottom: 16px; padding: 12px; background: var(--bg); border-radius: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 13px; margin-bottom: 4px;">
+                <i data-lucide="mail" style="width: 16px; height: 16px;"></i>
+                <strong>Email</strong>
+            </div>
+            <a href="mailto:{{ patient.email }}" style="color: var(--primary); text-decoration: none; font-weight: 500;">{{ patient.email }}</a>
         </div>
         {% endif %}
+        
         {% if patient.cim %}
-        <div style="margin-bottom: 16px;">
-            <strong>Cím:</strong><br>
-            {{ patient.cim }}
+        <div style="margin-bottom: 16px; padding: 12px; background: var(--bg); border-radius: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 13px; margin-bottom: 4px;">
+                <i data-lucide="map-pin" style="width: 16px; height: 16px;"></i>
+                <strong>Cím</strong>
+            </div>
+            <span style="color: var(--text);">{{ patient.cim }}</span>
         </div>
         {% endif %}
+        
         {% if patient.szuletesi_datum %}
-        <div style="margin-bottom: 16px;">
-            <strong>Születési dátum:</strong><br>
-            {{ patient.szuletesi_datum }}
+        <div style="margin-bottom: 16px; padding: 12px; background: var(--bg); border-radius: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 13px; margin-bottom: 4px;">
+                <i data-lucide="cake" style="width: 16px; height: 16px;"></i>
+                <strong>Születési dátum</strong>
+            </div>
+            <span style="color: var(--text);">{{ patient.szuletesi_datum }}</span>
         </div>
         {% endif %}
-        <div style="margin-bottom: 16px;">
-            <strong>Létrehozva:</strong><br>
-            {{ patient.letrehozva }}
+        
+        <div style="margin-bottom: 16px; padding: 12px; background: var(--bg); border-radius: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 13px; margin-bottom: 4px;">
+                <i data-lucide="calendar-plus" style="width: 16px; height: 16px;"></i>
+                <strong>Létrehozva</strong>
+            </div>
+            <span style="color: var(--text);">{{ patient.letrehozva }}</span>
         </div>
+        
         {% if patient.megjegyzesek %}
-        <div style="margin-bottom: 16px;">
-            <strong>Megjegyzések:</strong><br>
-            {{ patient.megjegyzesek }}
+        <div style="margin-bottom: 16px; padding: 12px; background: var(--bg); border-radius: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 13px; margin-bottom: 4px;">
+                <i data-lucide="file-text" style="width: 16px; height: 16px;"></i>
+                <strong>Megjegyzések</strong>
+            </div>
+            <span style="color: var(--text);">{{ patient.megjegyzesek }}</span>
         </div>
         {% endif %}
-        <button onclick="editPatient()" class="btn" style="width: 100%; margin-top: 20px;">✏️ Szerkesztés</button>
+        
+        <button onclick="editPatient()" class="btn" style="width: 100%; margin-top: 20px; justify-content: center;">
+            <i data-lucide="edit" style="width: 18px; height: 18px;"></i>
+            Szerkesztés
+        </button>
     </div>
     
     <!-- Kezelési történet -->
     <div>
         <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2>🦷 Kezelési történet</h2>
-                <button onclick="addTreatment()" class="btn">➕ Új kezelés</button>
+                <h2>
+                    <i data-lucide="activity" style="width: 20px; height: 20px;"></i>
+                    Kezelési történet
+                </h2>
+                <button onclick="addTreatment()" class="btn">
+                    <i data-lucide="plus" style="width: 18px; height: 18px;"></i>
+                    Új kezelés
+                </button>
             </div>
             
             {% if treatments %}
             <div style="max-height: 400px; overflow-y: auto;">
                 {% for treatment in treatments %}
-                <div style="border-left: 4px solid #667eea; padding: 16px; margin-bottom: 16px; background: #f9fafb; border-radius: 8px;">
+                <div style="border-left: 4px solid var(--primary); padding: 16px; margin-bottom: 16px; background: var(--bg); border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.transform='translateX(4px)'" onmouseout="this.style.transform='translateX(0)'">
                     <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-                        <strong style="color: #667eea;">{{ treatment.tipus }}</strong>
-                        <span style="color: #6b7280; font-size: 14px;">{{ treatment.datum }}</span>
+                        <strong style="color: var(--primary); font-size: 16px;">{{ treatment.tipus }}</strong>
+                        <span style="color: var(--text-muted); font-size: 14px; display: flex; align-items: center; gap: 4px;">
+                            <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                            {{ treatment.datum }}
+                        </span>
                     </div>
-                    <p style="color: #374151; margin-bottom: 8px;">{{ treatment.leiras }}</p>
+                    <p style="color: var(--text); margin-bottom: 12px;">{{ treatment.leiras }}</p>
                     {% if treatment.ar %}
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-weight: 600;">{{ treatment.ar }} Ft</span>
+                        <span style="font-weight: 600; color: var(--text); font-size: 18px;">{{ treatment.ar }} Ft</span>
                         {% if treatment.fizetve %}
-                        <span style="background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 12px; font-size: 12px;">Fizetve</span>
+                        <span style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px;">
+                            <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i>
+                            Fizetve
+                        </span>
                         {% else %}
-                        <span style="background: #fef3c7; color: #92400e; padding: 4px 12px; border-radius: 12px; font-size: 12px;">Függőben</span>
+                        <span style="background: rgba(251, 191, 36, 0.1); color: #fbbf24; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px;">
+                            <i data-lucide="clock" style="width: 14px; height: 14px;"></i>
+                            Függőben
+                        </span>
                         {% endif %}
                     </div>
                     {% endif %}
@@ -78,68 +131,91 @@
                 {% endfor %}
             </div>
             {% else %}
-            <p style="text-align: center; padding: 40px; color: #9ca3af;">Még nincs kezelési történet</p>
+            <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+                <i data-lucide="clipboard" style="width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+                <p>Még nincs kezelési történet</p>
+            </div>
             {% endif %}
         </div>
         
         <!-- Időpontok -->
         <div class="card" style="margin-top: 24px;">
-            <h2>📅 Időpontok</h2>
+            <h2>
+                <i data-lucide="calendar-check" style="width: 20px; height: 20px;"></i>
+                Időpontok
+            </h2>
             {% if appointments %}
             {% for apt in appointments %}
-            <div style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
-                <strong>{{ apt.veglegesitett_idopont }}</strong>
-                <p style="color: #6b7280; margin-top: 4px;">{{ apt.megjegyzes }}</p>
+            <div style="padding: 16px; border-bottom: 1px solid var(--border); transition: all 0.2s;" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <i data-lucide="calendar" style="width: 16px; height: 16px; color: var(--primary);"></i>
+                    <strong style="color: var(--text);">{{ apt.veglegesitett_idopont }}</strong>
+                </div>
+                <p style="color: var(--text-muted); margin-top: 4px; padding-left: 24px;">{{ apt.megjegyzes }}</p>
             </div>
             {% endfor %}
             {% else %}
-            <p style="text-align: center; padding: 20px; color: #9ca3af;">Nincs időpont</p>
+            <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+                <i data-lucide="calendar-x" style="width: 40px; height: 40px; margin-bottom: 12px; opacity: 0.5;"></i>
+                <p>Nincs időpont</p>
+            </div>
             {% endif %}
         </div>
     </div>
 </div>
 
 <!-- Add Treatment Modal -->
-<div id="treatment-modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
-    <div style="background: white; margin: 5% auto; padding: 32px; border-radius: 12px; width: 90%; max-width: 600px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
-        <span onclick="closeTreatmentModal()" style="color: #9ca3af; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
-        <h2>➕ Új kezelés hozzáadása</h2>
+<div id="treatment-modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); animation: fadeIn 0.2s;">
+    <div style="background: var(--surface); margin: 5% auto; padding: 32px; border-radius: 16px; width: 90%; max-width: 600px; box-shadow: 0 20px 60px var(--shadow); border: 1px solid var(--border); animation: slideUp 0.3s;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2 style="display: flex; align-items: center; gap: 8px; margin: 0;">
+                <i data-lucide="plus-circle" style="width: 24px; height: 24px;"></i>
+                Új kezelés hozzáadása
+            </h2>
+            <span onclick="closeTreatmentModal()" style="color: var(--text-muted); font-size: 28px; font-weight: bold; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='transparent'">&times;</span>
+        </div>
         <form id="treatment-form" onsubmit="saveTreatment(event)">
             <input type="hidden" name="beteg_id" value="{{ patient.beteg_id }}">
             <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Kezelés típusa *</label>
-                <input type="text" name="tipus" required style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Kezelés típusa *</label>
+                <input type="text" name="tipus" required style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--text); transition: all 0.2s;">
             </div>
             <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Dátum *</label>
-                <input type="date" name="datum" required style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Dátum *</label>
+                <input type="date" name="datum" required style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--text); transition: all 0.2s;">
             </div>
             <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Leírás</label>
-                <textarea name="leiras" rows="3" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;"></textarea>
+                <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Leírás</label>
+                <textarea name="leiras" rows="3" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--text); resize: vertical; transition: all 0.2s;"></textarea>
             </div>
             <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600;">Ár (Ft)</label>
-                <input type="number" name="ar" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Ár (Ft)</label>
+                <input type="number" name="ar" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--text); transition: all 0.2s;">
             </div>
-            <div style="margin-bottom: 20px;">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input type="checkbox" name="fizetve" value="1">
-                    <span>Fizetve</span>
+            <div style="margin-bottom: 24px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 12px; background: var(--bg); border-radius: 10px; transition: all 0.2s;" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='var(--bg)'">
+                    <input type="checkbox" name="fizetve" value="1" style="width: 18px; height: 18px; cursor: pointer;">
+                    <span style="color: var(--text); font-weight: 500;">Fizetve</span>
                 </label>
             </div>
-            <button type="submit" class="btn">💾 Mentés</button>
+            <button type="submit" class="btn" style="width: 100%; justify-content: center;">
+                <i data-lucide="save" style="width: 18px; height: 18px;"></i>
+                Mentés
+            </button>
         </form>
     </div>
 </div>
 
 <script>
+    lucide.createIcons();
+    
     function editPatient() {
         alert('Szerkesztés - hamarosan!');
     }
     
     function addTreatment() {
         document.getElementById('treatment-modal').style.display = 'block';
+        lucide.createIcons();
     }
     
     function closeTreatmentModal() {

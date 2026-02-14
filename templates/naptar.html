@@ -4,33 +4,170 @@
 
 {% block extra_css %}
 <style>
-    .calendar { background: white; border-radius: 12px; padding: 24px; }
-    .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-    .calendar-header h2 { font-size: 24px; color: #1f2937; }
-    .calendar-nav button { padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 0 5px; }
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
-    .calendar-day-header { text-align: center; font-weight: 600; color: #6b7280; padding: 10px; }
-    .calendar-day { background: #f9fafb; border-radius: 8px; padding: 12px; min-height: 100px; position: relative; }
-    .calendar-day.today { background: #eff6ff; border: 2px solid #667eea; }
-    .calendar-day-number { font-weight: 600; color: #374151; margin-bottom: 8px; }
-    .appointment { background: #667eea; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-bottom: 4px; cursor: pointer; }
-    .appointment:hover { background: #5568d3; }
+    .calendar {
+        background: var(--surface);
+        border-radius: 16px;
+        padding: 24px;
+        border: 1px solid var(--border);
+    }
+    
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+    
+    .calendar-header h2 {
+        font-size: 24px;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .calendar-nav {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .calendar-nav button {
+        padding: 10px 20px;
+        background: linear-gradient(135deg, var(--primary), #8b5cf6);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .calendar-nav button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+    }
+    
+    .calendar-nav button.secondary {
+        background: var(--surface-hover);
+        color: var(--text);
+    }
+    
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 12px;
+    }
+    
+    .calendar-day-header {
+        text-align: center;
+        font-weight: 600;
+        color: var(--text-muted);
+        padding: 12px;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .calendar-day {
+        background: var(--bg);
+        border-radius: 12px;
+        padding: 12px;
+        min-height: 100px;
+        position: relative;
+        border: 1px solid var(--border);
+        transition: all 0.2s;
+    }
+    
+    .calendar-day:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px var(--shadow);
+    }
+    
+    .calendar-day.today {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+        border: 2px solid var(--primary);
+    }
+    
+    .calendar-day-number {
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 8px;
+        font-size: 16px;
+    }
+    
+    .appointment {
+        background: linear-gradient(135deg, var(--primary), #8b5cf6);
+        color: white;
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+        margin-bottom: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .appointment:hover {
+        transform: translateX(4px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    }
+    
+    @media (max-width: 768px) {
+        .calendar-grid {
+            gap: 6px;
+        }
+        
+        .calendar-day {
+            min-height: 80px;
+            padding: 8px;
+        }
+        
+        .calendar-day-number {
+            font-size: 14px;
+        }
+        
+        .appointment {
+            font-size: 10px;
+            padding: 4px 6px;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1>📅 Naptár</h1>
+    <h1>Naptár</h1>
     <p>Időpontok naptár nézetben</p>
 </div>
 
 <div class="calendar">
     <div class="calendar-header">
-        <h2>{{ current_month }} {{ current_year }}</h2>
+        <h2>
+            <i data-lucide="calendar" style="width: 24px; height: 24px;"></i>
+            {{ current_month }} {{ current_year }}
+        </h2>
         <div class="calendar-nav">
-            <button onclick="previousMonth()">◀ Előző</button>
-            <button onclick="today()">Ma</button>
-            <button onclick="nextMonth()">Következő ▶</button>
+            <button onclick="previousMonth()">
+                <i data-lucide="chevron-left" style="width: 18px; height: 18px;"></i>
+                Előző
+            </button>
+            <button onclick="today()" class="secondary">
+                <i data-lucide="calendar-days" style="width: 18px; height: 18px;"></i>
+                Ma
+            </button>
+            <button onclick="nextMonth()">
+                Következő
+                <i data-lucide="chevron-right" style="width: 18px; height: 18px;"></i>
+            </button>
         </div>
     </div>
     
@@ -49,6 +186,7 @@
             <div class="calendar-day-number">{{ day.day }}</div>
             {% for appointment in day.appointments %}
             <div class="appointment" onclick="viewAppointment('{{ appointment.lead_id }}')">
+                <i data-lucide="clock" style="width: 12px; height: 12px;"></i>
                 {{ appointment.time }} - {{ appointment.name }}
             </div>
             {% endfor %}
@@ -59,6 +197,8 @@
 </div>
 
 <script>
+    lucide.createIcons();
+    
     function previousMonth() {
         const currentOffset = {{ month_offset }};
         window.location.href = '/naptar?month=' + (currentOffset - 1);
