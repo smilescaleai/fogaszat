@@ -197,6 +197,7 @@ def load_page_data():
             button3_text = str(row.get('button3_text', '')).strip()
             button3_link = str(row.get('button3_link', '')).strip()
             admin_psid = str(row.get('admin_psid', '')).strip()
+            dashboard = str(row.get('dashboard', '0')).strip()  # ÚJ!
             
             if page_id and access_token:
                 page_data[page_id] = {
@@ -210,7 +211,8 @@ def load_page_data():
                     "button2_text": button2_text if button2_text else '',
                     "button2_link": button2_link if button2_link else '',
                     "button3_text": button3_text if button3_text else '',
-                    "button3_link": button3_link if button3_link else ''
+                    "button3_link": button3_link if button3_link else '',
+                    "dashboard": dashboard  # ÚJ!
                 }
                 
                 if admin_psid:
@@ -437,6 +439,10 @@ def login():
         
         page_data = load_page_data()
         if page_id in page_data and page_data[page_id]['admin_password'] == password:
+            # Ellenőrizzük az előfizetést
+            if page_data[page_id].get('dashboard', '0') != '1':
+                return render_template('login.html', error='📊 A Dashboard szolgáltatás eléréséhez kérjük, vegye fel velünk a kapcsolatot az előfizetés aktiválásához!')
+            
             session['page_id'] = page_id
             return redirect(url_for('dashboard'))
         
