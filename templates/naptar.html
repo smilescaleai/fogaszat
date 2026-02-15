@@ -4,7 +4,7 @@
 
 {% block extra_css %}
 <style>
-    .calendar {
+    .calendar-container {
         background: var(--surface);
         border-radius: 16px;
         padding: 24px;
@@ -15,7 +15,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 30px;
+        margin-bottom: 24px;
         flex-wrap: wrap;
         gap: 16px;
     }
@@ -58,87 +58,78 @@
         color: var(--text);
     }
     
-    .calendar-grid {
+    .week-view {
         display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 12px;
-    }
-    
-    .calendar-day-header {
-        text-align: center;
-        font-weight: 600;
-        color: var(--text-muted);
-        padding: 12px;
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .calendar-day {
-        background: var(--bg);
-        border-radius: 12px;
-        padding: 12px;
-        min-height: 100px;
-        position: relative;
+        grid-template-columns: 80px repeat(7, 1fr);
+        gap: 1px;
+        background: var(--border);
         border: 1px solid var(--border);
-        transition: all 0.2s;
+        border-radius: 12px;
+        overflow: hidden;
     }
     
-    .calendar-day:hover {
-        border-color: var(--primary);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px var(--shadow);
-    }
-    
-    .calendar-day.today {
-        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
-        border: 2px solid var(--primary);
-    }
-    
-    .calendar-day-number {
-        font-weight: 600;
-        color: var(--text);
-        margin-bottom: 8px;
-        font-size: 16px;
-    }
-    
-    .appointment {
-        background: linear-gradient(135deg, var(--primary), #8b5cf6);
-        color: white;
-        padding: 6px 10px;
-        border-radius: 8px;
+    .time-label {
+        background: var(--bg);
+        padding: 8px;
+        text-align: right;
         font-size: 12px;
-        margin-bottom: 4px;
-        cursor: pointer;
-        transition: all 0.2s;
+        color: var(--text-muted);
+        font-weight: 600;
         display: flex;
         align-items: center;
-        gap: 4px;
+        justify-content: flex-end;
+        border-right: 2px solid var(--border);
     }
     
-    .appointment:hover {
-        transform: translateX(4px);
+    .day-header {
+        background: var(--bg);
+        padding: 12px 8px;
+        text-align: center;
+        font-weight: 600;
+        color: var(--text);
+        font-size: 13px;
+    }
+    
+    .day-header.today {
+        background: linear-gradient(135deg, var(--primary), #8b5cf6);
+        color: white;
+    }
+    
+    .time-slot {
+        background: var(--surface);
+        padding: 4px;
+        min-height: 40px;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+    }
+    
+    .time-slot:hover {
+        background: var(--surface-hover);
+    }
+    
+    .time-slot.has-appointment {
+        background: rgba(99, 102, 241, 0.1);
+        cursor: default;
+    }
+    
+    .appointment-block {
+        background: linear-gradient(135deg, var(--primary), #8b5cf6);
+        color: white;
+        padding: 6px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .appointment-block:hover {
+        transform: scale(1.02);
         box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
-    }
-    
-    @media (max-width: 768px) {
-        .calendar-grid {
-            gap: 6px;
-        }
-        
-        .calendar-day {
-            min-height: 80px;
-            padding: 8px;
-        }
-        
-        .calendar-day-number {
-            font-size: 14px;
-        }
-        
-        .appointment {
-            font-size: 10px;
-            padding: 4px 6px;
-        }
     }
 </style>
 {% endblock %}
@@ -146,75 +137,208 @@
 {% block content %}
 <div class="page-header">
     <h1>Naptár</h1>
-    <p>Időpontok naptár nézetben</p>
+    <p>Heti nézet félóránkénti beosztással</p>
 </div>
 
-<div class="calendar">
+<div class="calendar-container">
     <div class="calendar-header">
         <h2>
             <i data-lucide="calendar" style="width: 24px; height: 24px;"></i>
-            {{ current_month }} {{ current_year }}
+            {{ week_start }} - {{ week_end }}
         </h2>
         <div class="calendar-nav">
-            <button onclick="previousMonth()">
+            <button onclick="previousWeek()">
                 <i data-lucide="chevron-left" style="width: 18px; height: 18px;"></i>
-                Előző
+                Előző hét
             </button>
             <button onclick="today()" class="secondary">
                 <i data-lucide="calendar-days" style="width: 18px; height: 18px;"></i>
-                Ma
+                Mai hét
             </button>
-            <button onclick="nextMonth()">
-                Következő
+            <button onclick="nextWeek()">
+                Következő hét
                 <i data-lucide="chevron-right" style="width: 18px; height: 18px;"></i>
             </button>
         </div>
     </div>
     
-    <div class="calendar-grid">
-        <div class="calendar-day-header">Hétfő</div>
-        <div class="calendar-day-header">Kedd</div>
-        <div class="calendar-day-header">Szerda</div>
-        <div class="calendar-day-header">Csütörtök</div>
-        <div class="calendar-day-header">Péntek</div>
-        <div class="calendar-day-header">Szombat</div>
-        <div class="calendar-day-header">Vasárnap</div>
-        
-        {% for day in calendar_days %}
-        <div class="calendar-day {% if day.is_today %}today{% endif %}" {% if not day.day %}style="background: transparent; border: none;"{% endif %}>
-            {% if day.day %}
-            <div class="calendar-day-number">{{ day.day }}</div>
-            {% for appointment in day.appointments %}
-            <div class="appointment" onclick="viewAppointment('{{ appointment.lead_id }}')">
-                <i data-lucide="clock" style="width: 12px; height: 12px;"></i>
-                {{ appointment.time }} - {{ appointment.name }}
-            </div>
-            {% endfor %}
-            {% endif %}
+    <div class="week-view">
+        <!-- Header row -->
+        <div class="time-label" style="background: var(--bg);"></div>
+        {% for day in week_days %}
+        <div class="day-header {% if day.is_today %}today{% endif %}">
+            <div style="font-size: 11px; opacity: 0.8;">{{ day.day_name }}</div>
+            <div style="font-size: 16px; font-weight: 700;">{{ day.day_number }}</div>
         </div>
         {% endfor %}
+        
+        <!-- Time slots (8:00 - 20:00, félóránként) -->
+        {% for time_slot in time_slots %}
+            <div class="time-label">{{ time_slot }}</div>
+            {% for day in week_days %}
+            <div class="time-slot" 
+                 data-date="{{ day.date }}" 
+                 data-time="{{ time_slot }}"
+                 onclick="openAppointmentModal('{{ day.date }}', '{{ time_slot }}')">
+                {% for apt in day.appointments %}
+                    {% if apt.time == time_slot %}
+                    <div class="appointment-block" onclick="event.stopPropagation(); viewAppointment('{{ apt.lead_id }}')">
+                        {{ apt.name }}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Appointment Modal -->
+<div id="appointment-modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); animation: fadeIn 0.2s;">
+    <div style="background: var(--surface); margin: 5% auto; padding: 32px; border-radius: 16px; width: 90%; max-width: 600px; box-shadow: 0 20px 60px var(--shadow); border: 1px solid var(--border); animation: slideUp 0.3s; max-height: 80vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2 style="display: flex; align-items: center; gap: 8px; margin: 0;">
+                <i data-lucide="calendar-plus" style="width: 24px; height: 24px;"></i>
+                Új időpont
+            </h2>
+            <span onclick="closeAppointmentModal()" style="color: var(--text-muted); font-size: 28px; font-weight: bold; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='transparent'">&times;</span>
+        </div>
+        
+        <div style="background: var(--bg); padding: 16px; border-radius: 10px; margin-bottom: 24px; border: 1px solid var(--border);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i data-lucide="clock" style="width: 20px; height: 20px; color: var(--primary);"></i>
+                <div>
+                    <div style="font-size: 13px; color: var(--text-muted);">Kiválasztott időpont</div>
+                    <div style="font-weight: 600; color: var(--text); font-size: 16px;" id="selected-datetime"></div>
+                </div>
+            </div>
+        </div>
+        
+        <form id="appointment-form" onsubmit="saveAppointment(event)">
+            <input type="hidden" id="apt-date" name="date">
+            <input type="hidden" id="apt-time" name="time">
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Beteg kiválasztása</label>
+                <select id="patient-select" name="patient_type" onchange="togglePatientFields()" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--text); transition: all 0.2s;">
+                    <option value="existing">Meglévő beteg</option>
+                    <option value="new">Új beteg</option>
+                </select>
+            </div>
+            
+            <!-- Existing patient -->
+            <div id="existing-patient-field" style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Válasszon beteget</label>
+                <select name="beteg_id" id="beteg-select" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--text); transition: all 0.2s;">
+                    <option value="">-- Válasszon --</option>
+                    {% for patient in patients %}
+                    <option value="{{ patient.beteg_id }}">{{ patient.nev }} ({{ patient.telefon }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- New patient fields -->
+            <div id="new-patient-fields" style="display: none;">
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Név *</label>
+                    <input type="text" name="new_name" id="new-name" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--text); transition: all 0.2s;">
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Telefon *</label>
+                    <input type="tel" name="new_phone" id="new-phone" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--text); transition: all 0.2s;">
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 24px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--text); font-weight: 600; font-size: 14px;">Megjegyzés</label>
+                <textarea name="megjegyzes" rows="3" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--text); resize: vertical; transition: all 0.2s;"></textarea>
+            </div>
+            
+            <button type="submit" class="btn" style="width: 100%; justify-content: center;">
+                <i data-lucide="save" style="width: 18px; height: 18px;"></i>
+                Időpont mentése
+            </button>
+        </form>
     </div>
 </div>
 
 <script>
     lucide.createIcons();
     
-    function previousMonth() {
-        const currentOffset = {{ month_offset }};
-        window.location.href = '/naptar?month=' + (currentOffset - 1);
+    function previousWeek() {
+        const currentOffset = {{ week_offset }};
+        window.location.href = '/naptar?week=' + (currentOffset - 1);
     }
     
     function today() {
         window.location.href = '/naptar';
     }
     
-    function nextMonth() {
-        const currentOffset = {{ month_offset }};
-        window.location.href = '/naptar?month=' + (currentOffset + 1);
+    function nextWeek() {
+        const currentOffset = {{ week_offset }};
+        window.location.href = '/naptar?week=' + (currentOffset + 1);
     }
     
     function viewAppointment(leadId) {
         window.location.href = '/beteg/' + leadId;
+    }
+    
+    function openAppointmentModal(date, time) {
+        document.getElementById('appointment-modal').style.display = 'block';
+        document.getElementById('apt-date').value = date;
+        document.getElementById('apt-time').value = time;
+        document.getElementById('selected-datetime').textContent = date + ' ' + time;
+        lucide.createIcons();
+    }
+    
+    function closeAppointmentModal() {
+        document.getElementById('appointment-modal').style.display = 'none';
+        document.getElementById('appointment-form').reset();
+        togglePatientFields();
+    }
+    
+    function togglePatientFields() {
+        const patientType = document.getElementById('patient-select').value;
+        const existingField = document.getElementById('existing-patient-field');
+        const newFields = document.getElementById('new-patient-fields');
+        const betegSelect = document.getElementById('beteg-select');
+        const newName = document.getElementById('new-name');
+        const newPhone = document.getElementById('new-phone');
+        
+        if (patientType === 'existing') {
+            existingField.style.display = 'block';
+            newFields.style.display = 'none';
+            betegSelect.required = true;
+            newName.required = false;
+            newPhone.required = false;
+        } else {
+            existingField.style.display = 'none';
+            newFields.style.display = 'block';
+            betegSelect.required = false;
+            newName.required = true;
+            newPhone.required = true;
+        }
+    }
+    
+    function saveAppointment(event) {
+        event.preventDefault();
+        
+        const formData = new FormData(event.target);
+        
+        fetch('/add-appointment', {
+            method: 'POST',
+            body: formData
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data.success) {
+                closeAppointmentModal();
+                location.reload();
+            } else {
+                alert('Hiba: ' + data.error);
+            }
+        })
+        .catch(function(err) { alert('Hiba: ' + err); });
     }
 </script>
 {% endblock %}

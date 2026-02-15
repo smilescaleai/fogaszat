@@ -653,83 +653,116 @@ def naptar():
     if page_id not in page_data:
         return redirect(url_for('login'))
     
-    # Hónap paraméter (opcionális)
-    month_offset = int(request.args.get('month', 0))
+    # Hét paraméter (opcionális)
+    week_offset = int(request.args.get('week', 0))
+    
+    # Időpontok generálása (8:00 - 20:00, félóránként)
+    time_slots = []
+    for hour in range(8, 20):
+        time_slots.append(f"{hour:02d}:00")
+        time_slots.append(f"{hour:02d}:30")
     
     # Naptár adatok
     try:
+        from datetime import timedelta
+        
         company_name = page_data[page_id].get('company_name', f'Ugyfél{page_id[:6]}')
+        
+        # Betegek betöltése
+        patients_worksheet = get_or_create_client_worksheet(page_id, company_name, "Patients")
+        if patients_worksheet:
+            all_patients = patients_worksheet.get_all_records()
+            patients = [p for p in all_patients if str(p.get('page_id')) == str(page_id)]
+        else:
+            patients = []
+        
+        # Ha nincs beteg, Leads-ből generálunk
+        if not patients:
+            leads_worksheet = get_or_create_client_worksheet(page_id, company_name, "Leads")
+            if leads_worksheet:
+                all_leads = leads_worksheet.get_all_records()
+                page_leads = [l for l in all_leads if str(l.get('page_id')) == str(page_id)]
+                
+                patients_dict = {}
+                for lead in page_leads:
+                    key = f"{lead.get('name')}_{lead.get('phone')}"
+                    if key not in patients_dict:
+                        patients_dict[key] = {
+                            'beteg_id': lead.get('lead_id'),
+                            'nev': lead.get('name'),
+                            'telefon': lead.get('phone')
+                        }
+                
+                patients = list(patients_dict.values())
+        
+        # Időpontok betöltése
         worksheet = get_or_create_client_worksheet(page_id, company_name, "Leads")
         
         if not worksheet:
-            calendar_days = []
-            current_month = ''
-            current_year = ''
+            week_days = []
+            week_start = ''
+            week_end = ''
         else:
             all_leads = worksheet.get_all_records()
             leads = [l for l in all_leads if str(l.get('page_id')) == str(page_id) and l.get('veglegesitett_idopont')]
             
-            # Aktuális hónap számítása
-            from datetime import timedelta
-            from calendar import monthrange
-            
+            # Aktuális hét számítása
             today = datetime.now()
-            target_date = today.replace(day=1) + timedelta(days=32*month_offset)
-            target_date = target_date.replace(day=1)
+            week_start_date = today - timedelta(days=today.weekday()) + timedelta(weeks=week_offset)
             
-            current_month = target_date.strftime('%B')
-            current_year = target_date.year
+            week_days = []
+            day_names = ['Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat', 'Vasárnap']
             
-            # Hónap napjainak száma
-            days_in_month = monthrange(target_date.year, target_date.month)[1]
-            first_weekday = target_date.weekday()  # 0=hétfő
-            
-            # Naptár napok generálása
-            calendar_days = []
-            
-            # Üres napok a hónap elején
-            for i in range(first_weekday):
-                calendar_days.append({'day': '', 'is_today': False, 'appointments': []})
-            
-            # Hónap napjai
-            for day in range(1, days_in_month + 1):
-                day_date = target_date.replace(day=day)
+            for i in range(7):
+                day_date = week_start_date + timedelta(days=i)
                 day_str = day_date.strftime('%Y.%m.%d')
                 
                 # Időpontok ezen a napon
                 day_appointments = []
                 for lead in leads:
-                    apt_date = lead.get('veglegesitett_idopont', '').split(' ')[0] if lead.get('veglegesitett_idopont') else ''
-                    if apt_date == day_str:
-                        time_part = lead.get('veglegesitett_idopont', '').split(' ')[1] if ' ' in lead.get('veglegesitett_idopont', '') else ''
-                        day_appointments.append({
-                            'lead_id': lead.get('lead_id'),
-                            'name': lead.get('name'),
-                            'time': time_part
-                        })
+                    apt_datetime = lead.get('veglegesitett_idopont', '')
+                    if apt_datetime:
+                        parts = apt_datetime.split(' ')
+                        if len(parts) >= 2:
+                            apt_date = parts[0]
+                            apt_time = parts[1]
+                            if apt_date == day_str:
+                                day_appointments.append({
+                                    'lead_id': lead.get('lead_id'),
+                                    'name': lead.get('name'),
+                                    'time': apt_time
+                                })
                 
                 is_today = (day_date.date() == today.date())
-                calendar_days.append({
-                    'day': day,
+                week_days.append({
+                    'day_name': day_names[i],
+                    'day_number': day_date.day,
+                    'date': day_str,
                     'is_today': is_today,
                     'appointments': day_appointments
                 })
+            
+            week_start = week_start_date.strftime('%Y.%m.%d')
+            week_end = (week_start_date + timedelta(days=6)).strftime('%Y.%m.%d')
         
     except Exception as e:
         print(f"❌ Naptár hiba: {e}")
         import traceback
         traceback.print_exc()
-        calendar_days = []
-        current_month = ''
-        current_year = ''
-        month_offset = 0
+        week_days = []
+        week_start = ''
+        week_end = ''
+        week_offset = 0
+        patients = []
     
     return render_template('naptar.html', 
                          page_info=page_data[page_id], 
-                         calendar_days=calendar_days,
-                         current_month=current_month,
-                         current_year=current_year,
-                         month_offset=month_offset,
+                         week_days=week_days,
+                         week_start=week_start,
+                         week_end=week_end,
+                         week_offset=week_offset,
+                         time_slots=time_slots,
+                         patients=patients,
                          page_id=page_id)
 
 @app.route('/beteg/<lead_id>')
@@ -1004,6 +1037,97 @@ def update_lead():
         
     except Exception as e:
         print(f"❌ Lead frissítési hiba: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/add-appointment', methods=['POST'])
+def add_appointment():
+    if 'page_id' not in session:
+        return jsonify({"success": False, "error": "Not logged in"}), 401
+    
+    page_id = session['page_id']
+    page_data = load_page_data()
+    
+    try:
+        date = request.form.get('date')
+        time = request.form.get('time')
+        patient_type = request.form.get('patient_type')
+        megjegyzes = request.form.get('megjegyzes', '')
+        
+        company_name = page_data.get(page_id, {}).get('company_name', f'Ugyfél{page_id[:6]}')
+        
+        # Időpont formázása
+        idopont = f"{date} {time}"
+        
+        if patient_type == 'existing':
+            # Meglévő beteg
+            beteg_id = request.form.get('beteg_id')
+            
+            if not beteg_id:
+                return jsonify({"success": False, "error": "Válasszon beteget"}), 400
+            
+            # Beteg adatok lekérése
+            patients_worksheet = get_or_create_client_worksheet(page_id, company_name, "Patients")
+            if patients_worksheet:
+                all_patients = patients_worksheet.get_all_records()
+                patient = next((p for p in all_patients if str(p.get('beteg_id')) == str(beteg_id)), None)
+                
+                if patient:
+                    name = patient.get('nev')
+                    phone = patient.get('telefon')
+                else:
+                    # Ha nincs Patients-ben, keressük Leads-ben
+                    leads_worksheet = get_or_create_client_worksheet(page_id, company_name, "Leads")
+                    if leads_worksheet:
+                        all_leads = leads_worksheet.get_all_records()
+                        lead = next((l for l in all_leads if str(l.get('lead_id')) == str(beteg_id)), None)
+                        if lead:
+                            name = lead.get('name')
+                            phone = lead.get('phone')
+                        else:
+                            return jsonify({"success": False, "error": "Beteg nem található"}), 404
+                    else:
+                        return jsonify({"success": False, "error": "Beteg nem található"}), 404
+            else:
+                return jsonify({"success": False, "error": "Beteg nem található"}), 404
+            
+        else:
+            # Új beteg
+            name = request.form.get('new_name')
+            phone = request.form.get('new_phone')
+            
+            if not name or not phone:
+                return jsonify({"success": False, "error": "Név és telefon kötelező"}), 400
+        
+        # Lead mentése
+        lead_id = generate_lead_id()
+        timestamp = datetime.now().strftime("%Y.%m.%d %H:%M:%S")
+        
+        worksheet = get_or_create_client_worksheet(page_id, company_name, "Leads")
+        if not worksheet:
+            return jsonify({"success": False, "error": "Spreadsheet hiba"}), 500
+        
+        # 9 oszlop: lead_id, beerkezett, page_id, company_name, name, phone, psid, veglegesitett_idopont, megjegyzes
+        row = [
+            lead_id,
+            timestamp,
+            page_id,
+            company_name,
+            name,
+            phone,
+            '',  # psid
+            idopont,
+            megjegyzes
+        ]
+        
+        worksheet.append_row(row)
+        
+        print(f"✅ Időpont hozzáadva: {name} - {idopont}")
+        return jsonify({"success": True})
+        
+    except Exception as e:
+        print(f"❌ Időpont hozzáadási hiba: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500

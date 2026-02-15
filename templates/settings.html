@@ -8,7 +8,7 @@
     <p>Alkalmazás testreszabása és beállítások</p>
 </div>
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; max-width: 800px;">
     <!-- Megjelenés -->
     <div class="card">
         <h2>
@@ -39,53 +39,6 @@
         </div>
     </div>
     
-    <!-- Értesítések -->
-    <div class="card">
-        <h2>
-            <i data-lucide="bell" style="width: 20px; height: 20px;"></i>
-            Értesítések
-        </h2>
-        
-        <div style="margin-bottom: 16px;">
-            <label style="display: flex; align-items: center; justify-content: space-between; padding: 16px; background: var(--bg); border-radius: 10px; cursor: pointer; transition: all 0.2s; border: 1px solid var(--border);" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='var(--bg)'">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <i data-lucide="mail" style="width: 20px; height: 20px; color: var(--text-muted);"></i>
-                    <div>
-                        <div style="font-weight: 600; color: var(--text); font-size: 14px;">Email értesítések</div>
-                        <div style="font-size: 12px; color: var(--text-muted);">Új foglalásokról</div>
-                    </div>
-                </div>
-                <input type="checkbox" checked style="width: 20px; height: 20px; cursor: pointer;">
-            </label>
-        </div>
-        
-        <div style="margin-bottom: 16px;">
-            <label style="display: flex; align-items: center; justify-content: space-between; padding: 16px; background: var(--bg); border-radius: 10px; cursor: pointer; transition: all 0.2s; border: 1px solid var(--border);" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='var(--bg)'">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <i data-lucide="smartphone" style="width: 20px; height: 20px; color: var(--text-muted);"></i>
-                    <div>
-                        <div style="font-weight: 600; color: var(--text); font-size: 14px;">Push értesítések</div>
-                        <div style="font-size: 12px; color: var(--text-muted);">Böngésző értesítések</div>
-                    </div>
-                </div>
-                <input type="checkbox" style="width: 20px; height: 20px; cursor: pointer;">
-            </label>
-        </div>
-        
-        <div>
-            <label style="display: flex; align-items: center; justify-content: space-between; padding: 16px; background: var(--bg); border-radius: 10px; cursor: pointer; transition: all 0.2s; border: 1px solid var(--border);" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='var(--bg)'">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <i data-lucide="calendar" style="width: 20px; height: 20px; color: var(--text-muted);"></i>
-                    <div>
-                        <div style="font-weight: 600; color: var(--text); font-size: 14px;">Napi összefoglaló</div>
-                        <div style="font-size: 12px; color: var(--text-muted);">Reggel 8:00-kor</div>
-                    </div>
-                </div>
-                <input type="checkbox" checked style="width: 20px; height: 20px; cursor: pointer;">
-            </label>
-        </div>
-    </div>
-    
     <!-- Fiók információk -->
     <div class="card">
         <h2>
@@ -103,7 +56,7 @@
             <div style="color: var(--text); font-weight: 600; font-family: monospace; font-size: 12px;">{{ page_id }}</div>
         </div>
         
-        <div style="margin-bottom: 24px; padding: 12px; background: var(--bg); border-radius: 10px; border: 1px solid var(--border);">
+        <div style="padding: 12px; background: var(--bg); border-radius: 10px; border: 1px solid var(--border);">
             <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 4px;">Előfizetés státusz</div>
             <div style="display: flex; align-items: center; gap: 6px;">
                 <span style="background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
@@ -111,80 +64,6 @@
                     Aktív
                 </span>
             </div>
-        </div>
-        
-        <button class="btn-secondary" style="width: 100%; justify-content: center; padding: 12px; background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 8px;" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='var(--surface)'">
-            <i data-lucide="key" style="width: 18px; height: 18px;"></i>
-            Jelszó módosítása
-        </button>
-    </div>
-    
-    <!-- Adatok és biztonság -->
-    <div class="card">
-        <h2>
-            <i data-lucide="shield" style="width: 20px; height: 20px;"></i>
-            Adatok és biztonság
-        </h2>
-        
-        <div style="margin-bottom: 16px;">
-            <button class="btn-secondary" style="width: 100%; justify-content: center; padding: 12px; background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 8px; margin-bottom: 12px;" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='var(--surface)'">
-                <i data-lucide="download" style="width: 18px; height: 18px;"></i>
-                Adatok exportálása
-            </button>
-            
-            <button class="btn-secondary" style="width: 100%; justify-content: center; padding: 12px; background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 8px;" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='var(--surface)'">
-                <i data-lucide="database" style="width: 18px; height: 18px;"></i>
-                Biztonsági mentés
-            </button>
-        </div>
-        
-        <div style="padding: 16px; background: rgba(239, 68, 68, 0.1); border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.3);">
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                <i data-lucide="alert-triangle" style="width: 18px; height: 18px; color: #ef4444;"></i>
-                <strong style="color: #ef4444; font-size: 14px;">Veszélyzóna</strong>
-            </div>
-            <p style="color: #ef4444; font-size: 13px; margin: 0 0 12px 0; opacity: 0.9;">Az alábbi műveletek visszafordíthatatlanok.</p>
-            <button style="width: 100%; padding: 10px; background: transparent; border: 1px solid #ef4444; color: #ef4444; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.1)'" onmouseout="this.style.background='transparent'">
-                Fiók törlése
-            </button>
-        </div>
-    </div>
-    
-    <!-- Súgó és támogatás -->
-    <div class="card">
-        <h2>
-            <i data-lucide="help-circle" style="width: 20px; height: 20px;"></i>
-            Súgó és támogatás
-        </h2>
-        
-        <div style="margin-bottom: 16px;">
-            <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--bg); border-radius: 10px; text-decoration: none; transition: all 0.2s; border: 1px solid var(--border);" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='var(--bg)'">
-                <i data-lucide="book-open" style="width: 20px; height: 20px; color: var(--primary);"></i>
-                <div>
-                    <div style="font-weight: 600; color: var(--text); font-size: 14px;">Dokumentáció</div>
-                    <div style="font-size: 12px; color: var(--text-muted);">Használati útmutató</div>
-                </div>
-            </a>
-        </div>
-        
-        <div style="margin-bottom: 16px;">
-            <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--bg); border-radius: 10px; text-decoration: none; transition: all 0.2s; border: 1px solid var(--border);" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='var(--bg)'">
-                <i data-lucide="message-square" style="width: 20px; height: 20px; color: var(--primary);"></i>
-                <div>
-                    <div style="font-weight: 600; color: var(--text); font-size: 14px;">Kapcsolat</div>
-                    <div style="font-size: 12px; color: var(--text-muted);">Írjon nekünk</div>
-                </div>
-            </a>
-        </div>
-        
-        <div>
-            <a href="#" style="display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--bg); border-radius: 10px; text-decoration: none; transition: all 0.2s; border: 1px solid var(--border);" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='var(--bg)'">
-                <i data-lucide="info" style="width: 20px; height: 20px; color: var(--primary);"></i>
-                <div>
-                    <div style="font-weight: 600; color: var(--text); font-size: 14px;">Verzió információ</div>
-                    <div style="font-size: 12px; color: var(--text-muted);">v2.1.0</div>
-                </div>
-            </a>
         </div>
     </div>
 </div>
