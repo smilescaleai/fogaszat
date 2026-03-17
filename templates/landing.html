@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ company_info.company_name }} - Időpontfoglalás</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface-hover: #334155;
+            --border: #334155;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --error: #ef4444;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        .card {
+            background: var(--surface);
+            border-radius: 24px;
+            padding: 48px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border);
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .logo h1 {
+            font-size: 32px;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+        
+        .logo p {
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+        
+        .welcome {
+            background: var(--bg);
+            padding: 24px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .welcome p {
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--text);
+        }
+        
+        .buttons {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+        
+        .btn {
+            padding: 16px 24px;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+        }
+        
+        .btn-secondary {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+        
+        .btn-secondary:hover {
+            box-shadow: 0 8px 20px rgba(51, 65, 85, 0.4);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text);
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 15px;
+            background: var(--bg);
+            color: var(--text);
+            transition: all 0.2s;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        #booking-form {
+            display: none;
+        }
+        
+        .alert {
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideDown 0.3s;
+        }
+        
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid var(--success);
+            color: var(--success);
+        }
+        
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 4px solid var(--error);
+            color: var(--error);
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 640px) {
+            .card {
+                padding: 32px 24px;
+            }
+            
+            .logo h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="logo">
+                <h1>{{ company_info.company_name }}</h1>
+                <p>Időpontfoglalás</p>
+            </div>
+            
+            <div class="welcome">
+                <p>{{ company_info.welcome_text }}</p>
+            </div>
+            
+            <div id="buttons-section" class="buttons">
+                {% if company_info.button1_text %}
+                <button class="btn" onclick="showBookingForm()">
+                    <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
+                    {{ company_info.button1_text }}
+                </button>
+                {% endif %}
+                
+                {% if company_info.button2_text and company_info.button2_link %}
+                <button class="btn btn-secondary" onclick="showInfo('{{ company_info.button2_link }}')">
+                    <i data-lucide="info" style="width: 20px; height: 20px;"></i>
+                    {{ company_info.button2_text }}
+                </button>
+                {% endif %}
+                
+                {% if company_info.button3_text and company_info.button3_link %}
+                <button class="btn btn-secondary" onclick="showInfo('{{ company_info.button3_link }}')">
+                    <i data-lucide="help-circle" style="width: 20px; height: 20px;"></i>
+                    {{ company_info.button3_text }}
+                </button>
+                {% endif %}
+            </div>
+            
+            <div id="info-section" class="hidden">
+                <div class="welcome">
+                    <p id="info-text"></p>
+                </div>
+                <button class="btn btn-secondary" onclick="hideInfo()">
+                    <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i>
+                    Vissza
+                </button>
+            </div>
+            
+            <form id="booking-form" onsubmit="submitForm(event)">
+                <div id="alert-container"></div>
+                
+                <div class="form-group">
+                    <label>Név *</label>
+                    <input type="text" name="name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Telefonszám *</label>
+                    <input type="tel" name="phone" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email">
+                </div>
+                
+                <div class="form-group">
+                    <label>Megjegyzés (pl. milyen kezelés érdekli)</label>
+                    <textarea name="notes"></textarea>
+                </div>
+                
+                <button type="submit" class="btn" id="submit-btn">
+                    <i data-lucide="send" style="width: 20px; height: 20px;"></i>
+                    Küldés
+                </button>
+                
+                <button type="button" class="btn btn-secondary" onclick="hideBookingForm()" style="margin-top: 12px;">
+                    <i data-lucide="arrow-left" style="width: 20px; height: 20px;"></i>
+                    Vissza
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        lucide.createIcons();
+        
+        function showBookingForm() {
+            document.getElementById('buttons-section').style.display = 'none';
+            document.getElementById('booking-form').style.display = 'block';
+            lucide.createIcons();
+        }
+        
+        function hideBookingForm() {
+            document.getElementById('booking-form').style.display = 'none';
+            document.getElementById('buttons-section').style.display = 'grid';
+            document.getElementById('booking-form').reset();
+            document.getElementById('alert-container').innerHTML = '';
+        }
+        
+        function showInfo(text) {
+            document.getElementById('buttons-section').style.display = 'none';
+            document.getElementById('info-section').classList.remove('hidden');
+            document.getElementById('info-text').textContent = text;
+            lucide.createIcons();
+        }
+        
+        function hideInfo() {
+            document.getElementById('info-section').classList.add('hidden');
+            document.getElementById('buttons-section').style.display = 'grid';
+        }
+        
+        function submitForm(event) {
+            event.preventDefault();
+            
+            const submitBtn = document.getElementById('submit-btn');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i data-lucide="loader-2" style="width: 20px; height: 20px; animation: spin 1s linear infinite;"></i> Küldés...';
+            lucide.createIcons();
+            
+            const formData = new FormData(event.target);
+            
+            fetch('/{{ company_slug }}/submit', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                const alertContainer = document.getElementById('alert-container');
+                
+                if (data.success) {
+                    alertContainer.innerHTML = `
+                        <div class="alert alert-success">
+                            <i data-lucide="check-circle" style="width: 24px; height: 24px;"></i>
+                            <div>
+                                <strong>Siker!</strong>
+                                <p style="margin: 4px 0 0 0; opacity: 0.9;">${data.message}</p>
+                            </div>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                    event.target.reset();
+                    
+                    // 3 másodperc után vissza a gombokhoz
+                    setTimeout(() => {
+                        hideBookingForm();
+                    }, 3000);
+                } else {
+                    alertContainer.innerHTML = `
+                        <div class="alert alert-error">
+                            <i data-lucide="alert-circle" style="width: 24px; height: 24px;"></i>
+                            <div>
+                                <strong>Hiba!</strong>
+                                <p style="margin: 4px 0 0 0; opacity: 0.9;">${data.error}</p>
+                            </div>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                    lucide.createIcons();
+                }
+            })
+            .catch(err => {
+                const alertContainer = document.getElementById('alert-container');
+                alertContainer.innerHTML = `
+                    <div class="alert alert-error">
+                        <i data-lucide="alert-circle" style="width: 24px; height: 24px;"></i>
+                        <div>
+                            <strong>Hiba!</strong>
+                            <p style="margin: 4px 0 0 0; opacity: 0.9;">Hálózati hiba: ${err}</p>
+                        </div>
+                    </div>
+                `;
+                lucide.createIcons();
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                lucide.createIcons();
+            });
+        }
+    </script>
+</body>
+</html>
