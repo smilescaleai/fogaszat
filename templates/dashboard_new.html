@@ -65,11 +65,12 @@
                     <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">TELEFON</th>
                     <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">IDŐPONT</th>
                     <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">STÁTUSZ</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">MŰVELETEK</th>
                 </tr>
             </thead>
             <tbody>
                 {% for lead in recent_leads[:5] %}
-                <tr onclick="openModal('{{ lead.lead_id }}', '{{ lead.name }}', '{{ lead.veglegesitett_idopont }}')" style="cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.2s;" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='transparent'">
+                <tr onclick="openDetailsModal('{{ lead.lead_id }}', '{{ lead.name }}', '{{ lead.phone }}', '{{ lead.email }}', '{{ lead.megjegyzes }}', '{{ lead.veglegesitett_idopont }}', '{{ lead.beerkezett }}')" style="cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.2s;" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='transparent'">
                     <td style="padding: 16px;">
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #8b5cf6); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">
@@ -102,6 +103,12 @@
                         </span>
                         {% endif %}
                     </td>
+                    <td style="padding: 16px;" onclick="event.stopPropagation();">
+                        <button onclick="openAppointmentModal('{{ lead.lead_id }}', '{{ lead.name }}', '{{ lead.veglegesitett_idopont }}')" style="padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; background: linear-gradient(135deg, var(--primary), #8b5cf6); border: none; color: white; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s;">
+                            <i data-lucide="calendar-plus" style="width: 16px; height: 16px;"></i>
+                            Időpont
+                        </button>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -122,7 +129,58 @@
     </div>
 </div>
 
-<!-- Modal -->
+<!-- Details Modal -->
+<div id="details-modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); animation: fadeIn 0.2s;">
+    <div style="background: var(--surface); margin: 5% auto; padding: 32px; border-radius: 16px; width: 90%; max-width: 600px; box-shadow: 0 20px 60px var(--shadow); animation: slideUp 0.3s; border: 1px solid var(--border); max-height: 80vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2 style="display: flex; align-items: center; gap: 8px; margin: 0;">
+                <i data-lucide="user" style="width: 24px; height: 24px;"></i>
+                Foglalás részletei
+            </h2>
+            <span onclick="closeDetailsModal()" style="color: var(--text-muted); font-size: 28px; font-weight: bold; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='transparent'">&times;</span>
+        </div>
+        
+        <div style="background: var(--bg); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+            <div style="margin-bottom: 16px;">
+                <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 4px;">Név</div>
+                <div style="color: var(--text); font-weight: 600; font-size: 16px;" id="detail-name"></div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 4px;">Telefon</div>
+                <div style="color: var(--text); font-weight: 600; font-size: 16px;" id="detail-phone"></div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 4px;">Email</div>
+                <div style="color: var(--text); font-weight: 600; font-size: 16px;" id="detail-email"></div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 4px;">Beérkezett</div>
+                <div style="color: var(--text); font-weight: 600; font-size: 16px;" id="detail-beerkezett"></div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 4px;">Végleges időpont</div>
+                <div style="color: var(--text); font-weight: 600; font-size: 16px;" id="detail-idopont"></div>
+            </div>
+            <div>
+                <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 4px;">Megjegyzés</div>
+                <div style="color: var(--text); font-weight: 600; font-size: 16px;" id="detail-megjegyzes"></div>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 12px;">
+            <button onclick="openAppointmentModalFromDetails()" class="btn" style="flex: 1; justify-content: center;">
+                <i data-lucide="calendar-plus" style="width: 18px; height: 18px;"></i>
+                Időpont beállítása
+            </button>
+            <button onclick="viewFullDetails()" class="btn" style="flex: 1; justify-content: center; background: var(--surface-hover); color: var(--text);">
+                <i data-lucide="external-link" style="width: 18px; height: 18px;"></i>
+                Teljes részletek
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Appointment Modal -->
 <div id="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); animation: fadeIn 0.2s;">
     <div style="background: var(--surface); margin: 10% auto; padding: 32px; border-radius: 16px; width: 90%; max-width: 500px; box-shadow: 0 20px 60px var(--shadow); animation: slideUp 0.3s; border: 1px solid var(--border);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
@@ -130,7 +188,7 @@
                 <i data-lucide="calendar" style="width: 24px; height: 24px;"></i>
                 Időpont beállítása
             </h2>
-            <span onclick="closeModal()" style="color: var(--text-muted); font-size: 28px; font-weight: bold; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='transparent'">&times;</span>
+            <span onclick="closeAppointmentModal()" style="color: var(--text-muted); font-size: 28px; font-weight: bold; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='transparent'">&times;</span>
         </div>
         <p style="margin-bottom: 24px;"><strong id="modal-name" style="color: var(--text);"></strong></p>
         <form id="update-form" onsubmit="updateLead(event)">
@@ -173,7 +231,35 @@
 <script>
     lucide.createIcons();
     
-    function openModal(leadId, name, currentIdopont) {
+    let currentLeadId = '';
+    let currentLeadName = '';
+    let currentLeadIdopont = '';
+    
+    function openDetailsModal(leadId, name, phone, email, megjegyzes, idopont, beerkezett) {
+        currentLeadId = leadId;
+        currentLeadName = name;
+        currentLeadIdopont = idopont;
+        
+        document.getElementById('details-modal').style.display = 'block';
+        document.getElementById('detail-name').textContent = name;
+        document.getElementById('detail-phone').textContent = phone;
+        document.getElementById('detail-email').textContent = email || 'Nincs megadva';
+        document.getElementById('detail-beerkezett').textContent = beerkezett || 'Nincs adat';
+        document.getElementById('detail-idopont').textContent = idopont || 'Nincs beállítva';
+        document.getElementById('detail-megjegyzes').textContent = megjegyzes || 'Nincs megjegyzés';
+        
+        lucide.createIcons();
+    }
+    
+    function closeDetailsModal() {
+        document.getElementById('details-modal').style.display = 'none';
+    }
+    
+    function openAppointmentModal(leadId, name, currentIdopont) {
+        currentLeadId = leadId;
+        currentLeadName = name;
+        currentLeadIdopont = currentIdopont;
+        
         document.getElementById('modal').style.display = 'block';
         document.getElementById('lead-id').value = leadId;
         document.getElementById('modal-name').textContent = name;
@@ -192,8 +278,17 @@
         lucide.createIcons();
     }
     
-    function closeModal() {
+    function openAppointmentModalFromDetails() {
+        closeDetailsModal();
+        openAppointmentModal(currentLeadId, currentLeadName, currentLeadIdopont);
+    }
+    
+    function closeAppointmentModal() {
         document.getElementById('modal').style.display = 'none';
+    }
+    
+    function viewFullDetails() {
+        window.location.href = '/beteg/' + currentLeadId;
     }
     
     function updateLead(event) {
@@ -218,7 +313,7 @@
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                closeModal();
+                closeAppointmentModal();
                 location.reload();
             } else {
                 alert('Hiba: ' + data.error);
@@ -238,7 +333,8 @@
     // Auto-refresh csak ha nincs nyitva modal
     setInterval(function() {
         const modal = document.getElementById('modal');
-        if (modal.style.display !== 'block') {
+        const detailsModal = document.getElementById('details-modal');
+        if (modal.style.display !== 'block' && detailsModal.style.display !== 'block') {
             location.reload();
         }
     }, 30000);
